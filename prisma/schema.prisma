@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String    @id @default(cuid())
+  clerkId           String    @unique
+  email             String    @unique
+  name              String?
+  role              String    @default("FREE")
+  plan              String    @default("FREE")
+  monthlyAuditCount Int       @default(0)
+  lastResetDate     DateTime?
+  subscriptionEndsAt DateTime?
+  redeemedCodes     Json      @default("[]")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  audits            Audit[]
+}
+
+model CompetitorComparison {
+  id              String   @id @default(cuid())
+  userId          String
+  yourSite        String
+  competitorSite  String
+  yourData        Json
+  competitorData  Json
+  comparison      Json
+  summary         String
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RedeemCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  plan      String
+  duration  Int
+  isUsed    Boolean   @default(false)
+  usedBy    String?
+  usedAt    DateTime?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Audit {
+  id                String   @id @default(cuid())
+  userId            String
+  websiteUrl        String
+  pageTitle         String
+  metaDescription   String?
+  seoScore          Int
+  performanceScore  Int      @default(0)
+  accessibilityScore Int     @default(0)
+  h1Count           Int
+  imageCount        Int
+  missingAltCount   Int
+  internalLinks     Int
+  externalLinks     Int
+  aiRecommendations Json     @default("[]")
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

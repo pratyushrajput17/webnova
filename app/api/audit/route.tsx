@@ -1,0 +1,187 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import axios from "axios";
+import { prisma } from "@/lib/prisma";
+import { getOrCreateUser } from "@/lib/user";
+import {
+  validateUrl,
+  normalizeUrl,
+  analyzeWebsite,
+} from "@/lib/audit";
+import { checkQuota, needsReset } from "@/lib/quota";
+import type { ReactElement } from "react";
+
+export async function POST(request: NextRequest) {
+  try {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    let body: { url?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body." },
+        { status: 400 }
+      );
+    }
+
+    const validationError = validateUrl(body.url ?? "");
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    const targetUrl = normalizeUrl(body.url ?? "");
+
+    let user;
+    try {
+      user = await getOrCreateUser(clerkUserId);
+    } catch {
+      return NextResponse.json(
+        { error: "Failed to verify user." },
+        { status: 500 }
+      );
+    }
+
+    let currentCount = user.monthlyAuditCount;
+    let currentReset = user.lastResetDate;
+
+    if (needsReset(currentReset)) {
+      currentCount = 0;
+      currentReset = new Date();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { monthlyAuditCount: 0, lastResetDate: currentReset },
+      });
+    }
+
+    const quota = checkQuota(user.plan, currentCount);
+    if (!quota.withinQuota) {
+      return NextResponse.json(
+        {
+          error: "You have reached your monthly audit limit.",
+          code: "QUOTA_EXCEEDED",
+          limit: quota.limit,
+          used: quota.used,
+          plan: user.plan,
+        },
+        { status: 403 }
+      );
+    }
+
+    let auditResult;
+    try {
+      auditResult = await analyzeWebsite(targetUrl);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          return NextResponse.json(
+            { error: "Website took too long to respond. Please try again." },
+            { status: 504 }
+          );
+        }
+        if (error.code === "ENOTFOUND" || error.code === "EAI_AGAIN") {
+          return NextResponse.json(
+            {
+              error:
+                "Website could not be found. Check the URL and try again.",
+            },
+            { status: 404 }
+          );
+        }
+        if (error.response) {
+          return NextResponse.json(
+            {
+              error: `Website returned status ${error.response.status}. Try a different URL.`,
+            },
+            { status: 502 }
+          );
+        }
+      }
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Website could not be analyzed. Please try again.",
+        },
+        { status: 500 }
+      );
+    }
+
+    let audit;
+    try {
+      audit = await prisma.audit.create({
+        data: {
+          userId: user.id,
+          websiteUrl: targetUrl,
+          pageTitle: auditResult.pageTitle,
+          metaDescription: auditResult.metaDescription || null,
+          seoScore: auditResult.seoScore,
+          performanceScore: auditResult.performanceScore,
+          accessibilityScore: auditResult.accessibilityScore,
+          h1Count: auditResult.h1Count,
+          imageCount: auditResult.imageCount,
+          missingAltCount: auditResult.missingAltCount,
+          internalLinks: auditResult.internalLinks,
+          externalLinks: auditResult.externalLinks,
+          aiRecommendations: auditResult.aiRecommendations,
+        },
+      });
+    } catch (dbError) {
+      console.error("Audit save failed:", dbError);
+      return NextResponse.json(auditResult);
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { monthlyAuditCount: { increment: 1 } },
+    });
+
+    import("@/lib/notifications").then(({ createNotification }) => {
+      createNotification(
+        user.id,
+        "Audit Completed",
+        `SEO score: ${auditResult.seoScore} — ${targetUrl}`,
+        "audit_completed",
+        `/dashboard/history/${audit.id}`
+      );
+    }).catch(() => {});
+
+    if (user.email && !user.email.endsWith("@placeholder.com")) {
+      const auditUrl = `https://webnova.dev/dashboard/history/${audit.id}`;
+      (async () => {
+        try {
+          const [mod, Email] = await Promise.all([
+            import("@/lib/email"),
+            import("@/emails/AuditCompletedEmail"),
+          ]);
+          await mod.sendEmail({
+            to: user.email,
+            subject: `Audit complete for ${targetUrl}`,
+            react: (
+              <Email.default
+                name={user.name ?? ""}
+                websiteUrl={targetUrl}
+                seoScore={auditResult.seoScore}
+                performanceScore={auditResult.performanceScore}
+                accessibilityScore={auditResult.accessibilityScore}
+                reportUrl={auditUrl}
+              />
+            ) as ReactElement,
+          });
+        } catch {}
+      })();
+    }
+
+    return NextResponse.json(audit);
+  } catch (error) {
+    console.error("Audit error:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
+  }
+}

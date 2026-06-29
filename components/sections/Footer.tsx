@@ -2,30 +2,24 @@ import Container from "@/components/shared/Container";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-200 py-10">
+    <footer className="border-t border-zinc-100 py-12">
       <Container>
-        <div className="flex items-center justify-between">
-          {/* Left Side */}
+        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div>
-            <h2 className="text-3xl font-bold">WebNova</h2>
-
-            <p className="mt-2 text-zinc-600">
+            <h2 className="text-2xl font-bold tracking-tight">WebNova</h2>
+            <p className="mt-1.5 text-sm text-zinc-500">
               AI-powered website intelligence platform.
             </p>
           </div>
-
-          {/* Right Side */}
           <a
             href="#"
-            className="text-lg text-zinc-600 transition-colors hover:text-black"
+            className="text-sm text-zinc-500 transition-colors hover:text-zinc-900"
           >
             Contact
           </a>
         </div>
-
-        {/* Copyright */}
-        <div className="mt-10 border-t border-zinc-200 pt-6 text-center text-zinc-500">
-          © 2026 WebNova. All rights reserved.
+        <div className="mt-8 border-t border-zinc-100 pt-6 text-center text-sm text-zinc-400">
+          &copy; 2026 WebNova. All rights reserved.
         </div>
       </Container>
     </footer>

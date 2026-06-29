@@ -1,79 +1,36 @@
 import Container from "@/components/shared/Container";
-import {
-  Search,
-  BarChart3,
-  ShieldCheck,
-  Zap,
-  Globe,
-  Brain,
-} from "lucide-react";
 
-const features = [
-  {
-    icon: Search,
-    title: "SEO Intelligence",
-    description: "Discover hidden SEO issues and opportunities.",
-  },
-  {
-    icon: BarChart3,
-    title: "Competitor Insights",
-    description: "Compare your website against competitors.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Security Audit",
-    description: "Identify vulnerabilities and security risks.",
-  },
-  {
-    icon: Zap,
-    title: "Performance Analysis",
-    description: "Improve speed and Core Web Vitals.",
-  },
-  {
-    icon: Globe,
-    title: "Accessibility",
-    description: "Ensure your website works for everyone.",
-  },
-  {
-    icon: Brain,
-    title: "AI Recommendations",
-    description: "Get actionable AI-powered suggestions.",
-  },
+const companies = [
+  { name: "Google" },
+  { name: "Microsoft" },
+  { name: "Shopify" },
+  { name: "Stripe" },
+  { name: "Vercel" },
 ];
 
-export default function Features() {
-  return (<section className="py-28">
-     
+export default function TrustedBy() {
+  return (
+    <section className="border-y border-zinc-100 py-14">
       <Container>
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-            Features
-          </p>
-
-          <h2 className="mt-4 text-4xl font-bold">
-            Everything you need to grow.
-          </h2>
-        </div>
-
-        <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
+        <p className="mb-10 text-center text-sm font-medium text-zinc-400">
+          Trusted by leading companies worldwide
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+          {companies.map((company) => (
             <div
-              key={feature.title}
-              className="rounded-3xl border border-zinc-200 bg-white p-8 transition-all duration-300 hover:-translate-y-2 hover:border-black hover:shadow-xl"
+              key={company.name}
+              className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-6 py-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-sm"
             >
-              <feature.icon className="h-10 w-10" />
-
-              <h3 className="mt-6 text-2xl font-semibold">
-                {feature.title}
-              </h3>
-
-              <p className="mt-4 text-zinc-600">
-                {feature.description}
-              </p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-xs font-bold text-white">
+                {company.name[0]}
+              </div>
+              <span className="text-base font-semibold text-zinc-700">
+                {company.name}
+              </span>
             </div>
           ))}
         </div>
       </Container>
     </section>
-  )
+  );
 }
