@@ -51,7 +51,7 @@ export function parseCode(input: string): {
   if (parts.length >= 2) {
     const prefix = parts[0];
     const matchingPlan = Object.entries(CODE_PREFIXES).find(
-      ([_, p]) => p === prefix
+      ([, p]) => p === prefix
     );
     if (matchingPlan) {
       return { plan: matchingPlan[0], raw };

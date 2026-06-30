@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     let cancelled = false;
     async function check() {
       try {
-        const res = await axios.get("/api/admin/stats");
+        await axios.get("/api/admin/stats");
         if (!cancelled) setIsAdmin(true);
       } catch {
         if (!cancelled) {

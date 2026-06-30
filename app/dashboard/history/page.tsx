@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
@@ -112,24 +112,21 @@ export default function HistoryPage() {
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const fetchAudits = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("/api/audit/history", {
-        params: { page, limit: 10 },
-      });
-      setAudits(res.data.audits);
-      setPagination(res.data.pagination);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
   useEffect(() => {
-    fetchAudits();
-  }, [fetchAudits]);
+    (async () => {
+      try {
+        const res = await axios.get("/api/audit/history", {
+          params: { page, limit: 10 },
+        });
+        setAudits(res.data.audits);
+        setPagination(res.data.pagination);
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [page]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this audit?")) return;

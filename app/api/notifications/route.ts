@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
@@ -32,7 +32,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function PATCH() {
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {

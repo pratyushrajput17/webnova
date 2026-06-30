@@ -89,7 +89,6 @@ export default function UsageCard() {
 
   const Icon = planIcons[usage.plan] || BarChart3;
   const pct = getUsagePercent(usage.used, usage.limit, usage.isUnlimited);
-  const isLow = pct < 70;
   const isWarning = pct >= 70 && pct < 90;
   const isCritical = pct >= 90;
   const borderColor = isCritical

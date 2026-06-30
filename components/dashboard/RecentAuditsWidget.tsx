@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 import { Clock, ExternalLink, Trash2, Loader2 } from "lucide-react";
 
 interface Audit {
@@ -14,25 +13,22 @@ interface Audit {
 }
 
 export default function RecentAuditsWidget() {
-  const router = useRouter();
   const [audits, setAudits] = useState<Audit[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAudits();
+    (async () => {
+      try {
+        const res = await axios.get("/api/audit/history?limit=5");
+        setAudits(res.data.audits);
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
-
-  const fetchAudits = async () => {
-    try {
-      const res = await axios.get("/api/audit/history?limit=5");
-      setAudits(res.data.audits);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();

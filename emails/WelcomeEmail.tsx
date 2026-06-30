@@ -6,7 +6,6 @@ import {
   Container,
   Section,
   Text,
-  Link,
   Button,
   Hr,
   Img,

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import {
-  Users,
   Loader2,
   Search,
   ChevronLeft,
@@ -13,7 +12,6 @@ import {
   Settings2,
   Trash2,
   X,
-  Check,
   AlertTriangle,
 } from "lucide-react";
 
@@ -52,8 +50,7 @@ export default function AdminUsers() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const fetchUsers = async () => {
     try {
       const res = await axios.get("/api/admin/users", {
         params: { page, limit: 20 },
@@ -61,12 +58,14 @@ export default function AdminUsers() {
       setUsers(res.data.users);
       setPagination(res.data.pagination);
     } catch {}
-    setLoading(false);
-  }, [page]);
+  };
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    (async () => {
+      await fetchUsers();
+      setLoading(false);
+    })();
+  }, [page]);
 
   const filtered = search
     ? users.filter(

@@ -182,9 +182,6 @@ export default function CompetitorReportPDF(data: CompetitorReportPDFProps) {
     day: "numeric",
   });
 
-  const yourLabel = data.yourData.pageTitle || data.yourSite;
-  const compLabel = data.competitorData.pageTitle || data.competitorSite;
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>

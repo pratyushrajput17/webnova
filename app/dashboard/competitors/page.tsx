@@ -87,8 +87,7 @@ export default function CompetitorsPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  const fetchHistory = useCallback(async () => {
-    setHistoryLoading(true);
+  const fetchHistory = async () => {
     try {
       const res = await axios.get("/api/competitors");
       setHistory(res.data.comparisons ?? []);
@@ -97,11 +96,12 @@ export default function CompetitorsPage() {
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHistory();
-  }, [fetchHistory]);
+  }, []);
 
   const handleCompare = async () => {
     setError(null);

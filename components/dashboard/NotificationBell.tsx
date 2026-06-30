@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -12,7 +12,6 @@ import {
   Zap,
   Megaphone,
   BarChart3,
-  X,
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -67,19 +66,23 @@ export default function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await axios.get("/api/notifications");
-      setNotifications(res.data.notifications);
-      setUnreadCount(res.data.unreadCount);
-    } catch {}
-  }, []);
-
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+    let cancelled = false;
+    const fetch = async () => {
+      try {
+        const res = await axios.get("/api/notifications");
+        if (cancelled) return;
+        setNotifications(res.data.notifications);
+        setUnreadCount(res.data.unreadCount);
+      } catch {}
+    };
+    fetch();
+    const interval = setInterval(fetch, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

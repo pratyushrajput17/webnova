@@ -196,7 +196,7 @@ export default function AdminRedeem() {
                 </button>
               </div>
               <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50">
-                {result.codes.map((code, i) => (
+                {result.codes.map((code) => (
                   <div
                     key={code}
                     className="flex items-center justify-between border-b border-zinc-100 px-4 py-2.5 text-sm last:border-0"

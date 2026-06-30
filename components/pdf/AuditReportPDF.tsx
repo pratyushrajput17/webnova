@@ -157,11 +157,6 @@ export default function AuditReportPDF(data: AuditReportPDFProps) {
     day: "numeric",
   });
 
-  const siteName = data.websiteUrl
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "")
-    .replace(/^www\./, "");
-
   const recommendations = Array.isArray(data.aiRecommendations)
     ? data.aiRecommendations
     : [];

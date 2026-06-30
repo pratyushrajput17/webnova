@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/admin";
 import { checkQuota } from "@/lib/quota";
 import type { ReactElement } from "react";
 
+/* eslint-disable react-hooks/error-boundaries */
+
 export const dynamic = "force-dynamic";
 
 export async function POST() {
@@ -47,20 +49,22 @@ export async function POST() {
         import("@/emails/MonthlySummaryEmail"),
       ]);
 
+      const emailElement = (
+        <Email.default
+          name={user.name ?? ""}
+          plan={user.plan}
+          month={month}
+          auditCount={user.monthlyAuditCount}
+          totalAuditsAllTime={totalAuditsAllTime}
+          remainingAudits={quota.remaining}
+          isUnlimited={quota.isUnlimited}
+        />
+      ) as ReactElement;
+
       const success = await mod.sendEmail({
         to: user.email,
         subject: `Your WebNova ${month} Usage Summary`,
-        react: (
-          <Email.default
-            name={user.name ?? ""}
-            plan={user.plan}
-            month={month}
-            auditCount={user.monthlyAuditCount}
-            totalAuditsAllTime={totalAuditsAllTime}
-            remainingAudits={quota.remaining}
-            isUnlimited={quota.isUnlimited}
-          />
-        ) as ReactElement,
+        react: emailElement,
       });
 
       if (success) sent++;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
-import { checkQuota, needsReset, getPlanLimit } from "@/lib/quota";
+import { checkQuota, needsReset } from "@/lib/quota";
 
 export async function GET() {
   try {
@@ -18,7 +18,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
-    let { plan, monthlyAuditCount, lastResetDate } = user;
+    const { plan } = user;
+    let { monthlyAuditCount, lastResetDate } = user;
 
     if (needsReset(lastResetDate)) {
       monthlyAuditCount = 0;
