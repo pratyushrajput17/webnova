@@ -13,7 +13,7 @@ export async function requireAdmin() {
   if (!user) {
     let email = `${clerkUserId}@placeholder.com`;
     let name: string | undefined;
-    let role = "FREE";
+    const role = "FREE";
 
     try {
       const client = await clerkClient();
