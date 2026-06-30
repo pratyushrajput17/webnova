@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Search, Play } from "lucide-react";
 import Container from "@/components/shared/Container";
@@ -85,10 +86,13 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <button className="inline-flex items-center gap-2 rounded-xl bg-black px-8 py-4 text-base font-medium text-white transition-all hover:opacity-90">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-xl bg-black px-8 py-4 text-base font-medium text-white transition-all hover:opacity-90"
+            >
               Start Free
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
             <button className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-8 py-4 text-base font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50">
               <Play className="h-4 w-4" />
               Watch Demo
