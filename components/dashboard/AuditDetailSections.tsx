@@ -12,6 +12,7 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 
 interface LinkItem {
@@ -33,62 +34,46 @@ interface AuditSectionsData {
   missingAltImages?: { src: string }[];
   titleLength?: number;
   metaDescriptionLength?: number;
+  h1Count?: number;
+  internalLinks?: number;
+  externalLinks?: number;
+  imageCount?: number;
+  missingAltCount?: number;
+  pageTitle?: string;
+  metaDescription?: string;
 }
 
-interface AccordionSection {
-  id: string;
-  title: string;
-  count: number;
-  icon: typeof Hash;
-  badgeColor: string;
+function hasDetailData(arr: unknown[] | undefined | null): boolean {
+  return Array.isArray(arr) && arr.length > 0;
+}
+
+function showUnavailable(count: number) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3">
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+      <div>
+        <p className="text-sm font-medium text-blue-800">
+          {count} item{count !== 1 ? "s" : ""} detected
+        </p>
+        <p className="mt-0.5 text-xs text-blue-600">
+          Detailed breakdown unavailable for audits created before the schema
+          upgrade. Run a new audit to get full detail.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function AuditDetailSections({ data }: { data: AuditSectionsData }) {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
-  const sections: AccordionSection[] = [
-    {
-      id: "h1",
-      title: "H1 Tags",
-      count: data.h1Tags?.length ?? 0,
-      icon: Hash,
-      badgeColor: "bg-blue-50 text-blue-700",
-    },
-    {
-      id: "internal",
-      title: "Internal Links",
-      count: data.internalLinksData?.length ?? 0,
-      icon: Link,
-      badgeColor: "bg-emerald-50 text-emerald-700",
-    },
-    {
-      id: "external",
-      title: "External Links",
-      count: data.externalLinksData?.length ?? 0,
-      icon: ExternalLink,
-      badgeColor: "bg-amber-50 text-amber-700",
-    },
-    {
-      id: "images",
-      title: "Images",
-      count: data.imagesData?.length ?? 0,
-      icon: Image,
-      badgeColor: "bg-violet-50 text-violet-700",
-    },
-    {
-      id: "missing-alt",
-      title: "Missing Alt Tags",
-      count: data.missingAltImages?.length ?? 0,
-      icon: ImageOff,
-      badgeColor: "bg-red-50 text-red-700",
-    },
-    {
-      id: "meta",
-      title: "Meta Info",
-      count: 0,
-      icon: FileText,
-      badgeColor: "bg-zinc-50 text-zinc-700",
-    },
+  const badges = [
+    { id: "h1", label: "H1 Tags", arr: data.h1Tags, count: data.h1Count ?? 0, icon: Hash, color: "bg-blue-50 text-blue-700" },
+    { id: "internal", label: "Internal Links", arr: data.internalLinksData, count: data.internalLinks ?? 0, icon: Link, color: "bg-emerald-50 text-emerald-700" },
+    { id: "external", label: "External Links", arr: data.externalLinksData, count: data.externalLinks ?? 0, icon: ExternalLink, color: "bg-amber-50 text-amber-700" },
+    { id: "images", label: "Images", arr: data.imagesData, count: data.imageCount ?? 0, icon: Image, color: "bg-violet-50 text-violet-700" },
+    { id: "missing-alt", label: "Missing Alt Tags", arr: data.missingAltImages, count: data.missingAltCount ?? 0, icon: ImageOff, color: "bg-red-50 text-red-700" },
+    { id: "meta", label: "Meta Info", arr: null, count: 0, icon: FileText, color: "bg-zinc-50 text-zinc-700" },
   ];
 
   const toggle = (id: string) => {
@@ -99,32 +84,29 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
     <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8">
       <h2 className="text-lg font-semibold text-zinc-800">Detailed Analysis</h2>
       <div className="mt-5 space-y-3">
-        {sections.map((section) => {
-          const Icon = section.icon;
-          const isOpen = openSection === section.id;
-          const hasItems =
-            section.id === "meta"
-              ? true
-              : section.count > 0;
+        {badges.map((badge) => {
+          const Icon = badge.icon;
+          const isOpen = openSection === badge.id;
+          const actualCount = badge.id === "meta" ? 0 : Math.max(hasDetailData(badge.arr) ? badge.arr!.length : 0, badge.count);
 
           return (
             <div
-              key={section.id}
+              key={badge.id}
               className="overflow-hidden rounded-xl border border-zinc-100"
             >
               <button
-                onClick={() => toggle(section.id)}
+                onClick={() => toggle(badge.id)}
                 className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-zinc-50"
               >
                 <div className="flex items-center gap-3">
                   <Icon className="h-4 w-4 text-zinc-400" />
                   <span className="text-sm font-medium text-zinc-700">
-                    {section.title}
+                    {badge.label}
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${section.badgeColor}`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badge.color}`}
                   >
-                    {section.count}
+                    {actualCount}
                   </span>
                 </div>
                 <ChevronDown
@@ -144,12 +126,32 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
                     className="overflow-hidden"
                   >
                     <div className="border-t border-zinc-100 px-5 py-4">
-                      {section.id === "h1" && renderH1Tags(data.h1Tags)}
-                      {section.id === "internal" && renderLinks(data.internalLinksData, true)}
-                      {section.id === "external" && renderLinks(data.externalLinksData, false)}
-                      {section.id === "images" && renderImages(data.imagesData)}
-                      {section.id === "missing-alt" && renderMissingAlt(data.missingAltImages)}
-                      {section.id === "meta" && renderMetaInfo(data)}
+                      {badge.id === "h1" && (
+                        hasDetailData(data.h1Tags)
+                          ? renderH1Tags(data.h1Tags)
+                          : (data.h1Count ?? 0) > 0 ? showUnavailable(data.h1Count ?? 0) : renderH1Tags([])
+                      )}
+                      {badge.id === "internal" && (
+                        hasDetailData(data.internalLinksData)
+                          ? renderLinks(data.internalLinksData, true)
+                          : (data.internalLinks ?? 0) > 0 ? showUnavailable(data.internalLinks ?? 0) : renderLinks([], true)
+                      )}
+                      {badge.id === "external" && (
+                        hasDetailData(data.externalLinksData)
+                          ? renderLinks(data.externalLinksData, false)
+                          : (data.externalLinks ?? 0) > 0 ? showUnavailable(data.externalLinks ?? 0) : renderLinks([], false)
+                      )}
+                      {badge.id === "images" && (
+                        hasDetailData(data.imagesData)
+                          ? renderImages(data.imagesData)
+                          : (data.imageCount ?? 0) > 0 ? showUnavailable(data.imageCount ?? 0) : renderImages([])
+                      )}
+                      {badge.id === "missing-alt" && (
+                        hasDetailData(data.missingAltImages)
+                          ? renderMissingAlt(data.missingAltImages)
+                          : (data.missingAltCount ?? 0) > 0 ? showUnavailable(data.missingAltCount ?? 0) : renderMissingAlt([])
+                      )}
+                      {badge.id === "meta" && renderMetaInfo(data)}
                     </div>
                   </motion.div>
                 )}
@@ -355,8 +357,14 @@ function renderMetaInfo(data: AuditSectionsData) {
       <div>
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-zinc-700">
-            Title Length
+            Page Title
           </span>
+          {data.pageTitle && (
+            <span className="text-xs text-zinc-400 truncate ml-4 max-w-[60%]">{data.pageTitle}</span>
+          )}
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-sm text-zinc-500">Title Length</span>
           <span className="text-sm text-zinc-500">{titleLen} characters</span>
         </div>
         <div className="mt-1.5 h-2 w-full rounded-full bg-zinc-100">
@@ -374,11 +382,13 @@ function renderMetaInfo(data: AuditSectionsData) {
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
           )}
           <span className="text-xs text-zinc-500">
-            {titleOk
-              ? "SEO-friendly length (30–60 characters)"
-              : titleLen < 30
-                ? "Too short — aim for 30–60 characters"
-                : "Too long — aim for 30–60 characters"}
+            {titleLen === 0
+              ? "No title tag found"
+              : titleOk
+                ? "SEO-friendly length (30–60 characters)"
+                : titleLen < 30
+                  ? "Too short — aim for 30–60 characters"
+                  : "Too long — aim for 30–60 characters"}
           </span>
         </div>
       </div>
@@ -386,8 +396,14 @@ function renderMetaInfo(data: AuditSectionsData) {
       <div>
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-zinc-700">
-            Meta Description Length
+            Meta Description
           </span>
+          {data.metaDescription && (
+            <span className="text-xs text-zinc-400 truncate ml-4 max-w-[60%]">{data.metaDescription}</span>
+          )}
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-sm text-zinc-500">Description Length</span>
           <span className="text-sm text-zinc-500">{descLen} characters</span>
         </div>
         <div className="mt-1.5 h-2 w-full rounded-full bg-zinc-100">

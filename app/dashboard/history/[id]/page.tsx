@@ -360,6 +360,22 @@ export default function AuditDetailPage() {
     URL.revokeObjectURL(url);
   }, [audit]);
 
+  if (audit) {
+    console.log("[AUDIT UI] Audit data loaded:", {
+      id: audit.id,
+      h1Count: audit.h1Count,
+      h1Tags: Array.isArray(audit.h1Tags) ? audit.h1Tags.length : typeof audit.h1Tags,
+      internalLinks: audit.internalLinks,
+      internalLinksData: Array.isArray(audit.internalLinksData) ? audit.internalLinksData.length : typeof audit.internalLinksData,
+      externalLinks: audit.externalLinks,
+      externalLinksData: Array.isArray(audit.externalLinksData) ? audit.externalLinksData.length : typeof audit.externalLinksData,
+      imageCount: audit.imageCount,
+      imagesData: Array.isArray(audit.imagesData) ? audit.imagesData.length : typeof audit.imagesData,
+      missingAltCount: audit.missingAltCount,
+      missingAltImages: Array.isArray(audit.missingAltImages) ? audit.missingAltImages.length : typeof audit.missingAltImages,
+    });
+  }
+
   if (loading) return <LoadingSkeleton />;
 
   if (error || !audit) {
@@ -548,6 +564,13 @@ export default function AuditDetailPage() {
           missingAltImages: audit.missingAltImages,
           titleLength: audit.titleLength,
           metaDescriptionLength: audit.metaDescriptionLength,
+          h1Count: audit.h1Count,
+          internalLinks: audit.internalLinks,
+          externalLinks: audit.externalLinks,
+          imageCount: audit.imageCount,
+          missingAltCount: audit.missingAltCount,
+          pageTitle: audit.pageTitle,
+          metaDescription: audit.metaDescription ?? undefined,
         }}
       />
 

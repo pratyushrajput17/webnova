@@ -215,6 +215,7 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     if (text) h1Tags.push(text);
   });
   const h1Count = h1Tags.length;
+  console.log("[EXTRACT] h1Tags:", JSON.stringify(h1Tags), "| h1Count:", h1Count);
 
   const imagesData: ImageItem[] = [];
   const missingAltImages: { src: string }[] = [];
@@ -232,6 +233,7 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     }
     imagesData.push({ src, alt, hasAlt });
   });
+  console.log("[EXTRACT] imagesData length:", imagesData.length, "missingAltImages length:", missingAltImages.length, "missingAltCount:", missingAltCount);
 
   const baseUrl = response.request?.res?.responseUrl || targetUrl;
   const base = new URL(baseUrl);
@@ -259,6 +261,7 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
 
   const internalLinks = internalLinksData.length;
   const externalLinks = externalLinksData.length;
+  console.log("[EXTRACT] internalLinksData length:", internalLinks, "externalLinksData length:", externalLinks);
 
   const seoScore = calculateSeoScore({
     title: pageTitle,
