@@ -1,6 +1,9 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import {
   Search,
   GitCompare,
@@ -17,6 +20,7 @@ import {
   Rocket,
   Check,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import Container from "@/components/shared/Container";
 import { PLANS, type PricingPlan } from "@/lib/pricing";
@@ -57,6 +61,20 @@ function FeatureIcon({ name }: { name: string }) {
 }
 
 function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = useCallback(() => {
+    setLoading(true);
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      router.push("/login");
+    } else {
+      router.push(`/pricing/checkout?plan=${plan.key.toLowerCase()}`);
+    }
+  }, [isLoaded, isSignedIn, router, plan.key]);
+
   return (
     <motion.div
       variants={itemVariants}
@@ -135,7 +153,9 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
 
       <div className="mt-auto pt-10">
         <button
-          className={`group inline-flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-semibold transition-all ${
+          onClick={handleClick}
+          disabled={loading}
+          className={`group inline-flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
             plan.popular
               ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 hover:bg-zinc-800 hover:shadow-xl"
               : plan.key === "LIFETIME"
@@ -143,8 +163,14 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
                 : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
           }`}
         >
-          <span>{plan.cta}</span>
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <span>{plan.cta}</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </>
+          )}
         </button>
       </div>
     </motion.div>
