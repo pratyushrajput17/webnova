@@ -1,7 +1,8 @@
 export const PLAN_LIMITS: Record<string, number> = {
   FREE: 3,
-  STARTER: 50,
+  STARTER: 25,
   PRO: -1,
+  LIFETIME: -1,
   ENTERPRISE: -1,
 };
 

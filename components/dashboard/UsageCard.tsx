@@ -7,6 +7,7 @@ import {
   BarChart3,
   Zap,
   Crown,
+  Sparkles,
   Infinity,
   Loader2,
   ChevronRight,
@@ -24,7 +25,8 @@ interface UsageData {
 const planLabels: Record<string, string> = {
   FREE: "Free",
   STARTER: "Starter",
-  PRO: "Pro",
+  PRO: "Professional",
+  LIFETIME: "Lifetime Access",
   ENTERPRISE: "Enterprise",
 };
 
@@ -32,6 +34,7 @@ const planIcons: Record<string, typeof BarChart3> = {
   FREE: BarChart3,
   STARTER: Zap,
   PRO: Crown,
+  LIFETIME: Sparkles,
   ENTERPRISE: Crown,
 };
 
@@ -97,6 +100,28 @@ export default function UsageCard() {
       ? "border-amber-200"
       : "border-zinc-200";
 
+  const planBgColor =
+    usage.plan === "FREE"
+      ? "bg-zinc-100"
+      : usage.plan === "STARTER"
+        ? "bg-blue-50"
+        : usage.plan === "LIFETIME"
+          ? "bg-emerald-50"
+          : usage.plan === "PRO"
+            ? "bg-indigo-50"
+            : "bg-amber-50";
+
+  const planIconColor =
+    usage.plan === "FREE"
+      ? "text-zinc-500"
+      : usage.plan === "STARTER"
+        ? "text-blue-600"
+        : usage.plan === "LIFETIME"
+          ? "text-emerald-600"
+          : usage.plan === "PRO"
+            ? "text-indigo-600"
+            : "text-amber-600";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -107,23 +132,9 @@ export default function UsageCard() {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-              usage.plan === "FREE"
-                ? "bg-zinc-100"
-                : usage.plan === "STARTER"
-                  ? "bg-blue-50"
-                  : "bg-amber-50"
-            }`}
+            className={`flex h-10 w-10 items-center justify-center rounded-xl ${planBgColor}`}
           >
-            <Icon
-              className={`h-5 w-5 ${
-                usage.plan === "FREE"
-                  ? "text-zinc-500"
-                  : usage.plan === "STARTER"
-                    ? "text-blue-600"
-                    : "text-amber-600"
-              }`}
-            />
+            <Icon className={`h-5 w-5 ${planIconColor}`} />
           </div>
           <div>
             <p className="text-sm font-medium text-zinc-500">Current Plan</p>

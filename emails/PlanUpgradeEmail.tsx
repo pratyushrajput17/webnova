@@ -28,6 +28,10 @@ const planColors: Record<string, { badge: string; gradient: string }> = {
     badge: "bg-indigo-100 text-indigo-700",
     gradient: "from-indigo-500 to-indigo-600",
   },
+  LIFETIME: {
+    badge: "bg-emerald-100 text-emerald-700",
+    gradient: "from-emerald-500 to-emerald-600",
+  },
   ENTERPRISE: {
     badge: "bg-amber-100 text-amber-700",
     gradient: "from-amber-500 to-amber-600",

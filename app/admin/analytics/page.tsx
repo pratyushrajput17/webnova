@@ -46,6 +46,7 @@ const PLAN_COLORS: Record<string, string> = {
   FREE: "#a1a1aa",
   STARTER: "#3b82f6",
   PRO: "#6366f1",
+  LIFETIME: "#10b981",
   ENTERPRISE: "#f59e0b",
 };
 

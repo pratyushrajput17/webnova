@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Zap,
   Crown,
+  Sparkles,
   Gift,
   AlertCircle,
   Clock,
@@ -26,7 +27,8 @@ interface RedeemResponse {
 
 const planDisplay: Record<string, { label: string; color: string; icon: typeof Crown }> = {
   STARTER: { label: "Starter", color: "text-blue-600", icon: Zap },
-  PRO: { label: "Pro", color: "text-amber-600", icon: Crown },
+  PRO: { label: "Professional", color: "text-indigo-600", icon: Crown },
+  LIFETIME: { label: "Lifetime Access", color: "text-emerald-600", icon: Sparkles },
   ENTERPRISE: { label: "Enterprise", color: "text-violet-600", icon: Crown },
 };
 

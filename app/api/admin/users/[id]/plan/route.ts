@@ -23,10 +23,10 @@ export async function PATCH(
     }
 
     const plan = body.plan?.toUpperCase();
-    const validPlans = ["FREE", "STARTER", "PRO", "ENTERPRISE"];
+    const validPlans = ["FREE", "STARTER", "PRO", "LIFETIME", "ENTERPRISE"];
     if (!plan || !validPlans.includes(plan)) {
       return NextResponse.json(
-        { error: "Invalid plan. Must be FREE, STARTER, PRO, or ENTERPRISE." },
+        { error: "Invalid plan. Must be FREE, STARTER, PRO, LIFETIME, or ENTERPRISE." },
         { status: 400 }
       );
     }

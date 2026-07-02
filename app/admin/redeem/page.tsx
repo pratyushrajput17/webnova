@@ -12,11 +12,13 @@ import {
   Star,
   Zap,
   Crown,
+  Sparkles,
 } from "lucide-react";
 
 const PLAN_CONFIG = [
   { key: "STARTER", label: "Starter", icon: Star, color: "from-blue-400 to-blue-500", shadow: "shadow-blue-200/50", bg: "bg-blue-50 text-blue-700" },
-  { key: "PRO", label: "Pro", icon: Zap, color: "from-indigo-400 to-indigo-500", shadow: "shadow-indigo-200/50", bg: "bg-indigo-50 text-indigo-700" },
+  { key: "PRO", label: "Professional", icon: Zap, color: "from-indigo-400 to-indigo-500", shadow: "shadow-indigo-200/50", bg: "bg-indigo-50 text-indigo-700" },
+  { key: "LIFETIME", label: "Lifetime Access", icon: Sparkles, color: "from-emerald-400 to-emerald-500", shadow: "shadow-emerald-200/50", bg: "bg-emerald-50 text-emerald-700" },
   { key: "ENTERPRISE", label: "Enterprise", icon: Crown, color: "from-amber-400 to-amber-500", shadow: "shadow-amber-200/50", bg: "bg-amber-50 text-amber-700" },
 ];
 

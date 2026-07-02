@@ -34,7 +34,7 @@ interface Pagination {
   totalPages: number;
 }
 
-const PLANS = ["FREE", "STARTER", "PRO", "ENTERPRISE"];
+const PLANS = ["FREE", "STARTER", "PRO", "LIFETIME", "ENTERPRISE"];
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);

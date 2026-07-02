@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Loader2, X, Zap, Crown } from "lucide-react";
+import { Globe, Loader2, X, Zap, Crown, Sparkles } from "lucide-react";
 import AuditResults from "./AuditResults";
 
 interface AuditResult {
@@ -177,7 +177,7 @@ export default function WebsiteAnalyzer() {
               <p className="mt-2 text-center text-sm text-zinc-500">
                 You have reached your monthly audit limit on the{" "}
                 <span className="font-medium text-zinc-700">
-                  {quotaModal.plan === "FREE" ? "Free" : quotaModal.plan} plan
+                  {quotaModal.plan === "FREE" ? "Free" : quotaModal.plan === "STARTER" ? "Starter" : quotaModal.plan === "PRO" ? "Professional" : quotaModal.plan === "LIFETIME" ? "Lifetime Access" : quotaModal.plan} plan
                 </span>
                 .
               </p>

@@ -3,12 +3,14 @@ import { randomBytes } from "crypto";
 const CODE_PREFIXES: Record<string, string> = {
   STARTER: "STARTER",
   PRO: "PRO",
+  LIFETIME: "LIFE",
   ENTERPRISE: "ENT",
 };
 
 const PLAN_DURATIONS: Record<string, number> = {
-  STARTER: 30,
-  PRO: 30,
+  STARTER: 365,
+  PRO: 365,
+  LIFETIME: 1825,
   ENTERPRISE: 30,
 };
 
@@ -71,10 +73,10 @@ export function seedTestCodes(): {
   duration: number;
 }[] {
   return [
-    { code: "STARTER-TEST123", plan: "STARTER", duration: 30 },
-    { code: "PRO-TEST123", plan: "PRO", duration: 30 },
-    { code: "ENT-TEST123", plan: "ENTERPRISE", duration: 30 },
+    { code: "STARTER-TEST123", plan: "STARTER", duration: 365 },
+    { code: "PRO-TEST123", plan: "PRO", duration: 365 },
+    { code: "LIFE-TEST123", plan: "LIFETIME", duration: 1825 },
   ];
 }
 
-export const VALID_PLANS = ["STARTER", "PRO", "ENTERPRISE"];
+export const VALID_PLANS = ["STARTER", "PRO", "LIFETIME", "ENTERPRISE"];

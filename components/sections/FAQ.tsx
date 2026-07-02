@@ -32,7 +32,7 @@ const faqs = [
     value: "item-4",
     question: "Is there a free plan?",
     answer:
-      "Yes. You can start with the free Starter plan.",
+      "Yes. New users get 3 free audits to try WebNova. Upgrade to Starter for 300 audits per year.",
   },
   {
     value: "item-5",

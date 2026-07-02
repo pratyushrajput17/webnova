@@ -8,13 +8,14 @@ import {
   Zap,
   Globe,
   FileText,
+  Infinity,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const usageStats = [
   {
     label: "Audits Used",
-    value: "87",
+    value: "—",
     total: null,
     subtitle: "Unlimited",
     unlimited: true,
@@ -22,13 +23,13 @@ const usageStats = [
   },
   {
     label: "Competitors Tracked",
-    value: "28",
+    value: "—",
     total: null,
     icon: Globe,
   },
   {
     label: "Reports Generated",
-    value: "154",
+    value: "—",
     total: null,
     icon: FileText,
   },
@@ -67,7 +68,7 @@ export default function BillingPage() {
           <div className="mt-6 flex items-start justify-between">
             <div>
               <p className="text-sm text-zinc-500">Current Plan</p>
-              <p className="mt-1 text-3xl font-bold">Pro</p>
+              <p className="mt-1 text-3xl font-bold">Professional</p>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-4 py-1.5 text-sm font-medium text-green-700">
               <CheckCircle2 className="h-4 w-4" />
@@ -77,12 +78,12 @@ export default function BillingPage() {
           <Separator className="my-6" />
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <p className="text-sm text-zinc-500">Monthly Price</p>
-              <p className="mt-1 text-lg font-semibold">$79 / month</p>
+              <p className="text-sm text-zinc-500">Plan Price</p>
+              <p className="mt-1 text-lg font-semibold">$299 / year</p>
             </div>
             <div>
               <p className="text-sm text-zinc-500">Next Billing Date</p>
-              <p className="mt-1 text-lg font-semibold">July 25, 2026</p>
+              <p className="mt-1 text-lg font-semibold">Annual renewal</p>
             </div>
           </div>
           <button className="mt-8 inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-zinc-100">
@@ -103,11 +104,11 @@ export default function BillingPage() {
             <h2 className="text-xl font-semibold">Payment Method</h2>
           </div>
           <p className="mt-2 text-sm text-zinc-500">
-            You are currently on the Pro plan.
+            You are currently on the Professional plan.
           </p>
           <Separator className="my-6" />
-          <p className="text-sm text-zinc-500">Card ending in 4242</p>
-          <p className="mt-1 text-sm font-medium">Expires 12/28</p>
+          <p className="text-sm text-zinc-500">No payment method on file</p>
+          <p className="mt-1 text-sm font-medium">Contact sales to upgrade</p>
           <button className="mt-6 w-full rounded-xl bg-black px-6 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90">
             Upgrade Plan
           </button>

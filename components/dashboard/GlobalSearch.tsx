@@ -19,6 +19,7 @@ const badgeColors: Record<string, string> = {
   Competitor: "bg-indigo-100 text-indigo-700",
   STARTER: "bg-blue-100 text-blue-700",
   PRO: "bg-indigo-100 text-indigo-700",
+  LIFETIME: "bg-emerald-100 text-emerald-700",
   ENTERPRISE: "bg-amber-100 text-amber-700",
   User: "bg-zinc-100 text-zinc-700",
 };
