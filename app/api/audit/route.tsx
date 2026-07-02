@@ -112,32 +112,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("[AUDIT CREATE] Extracted data:", JSON.stringify({
+      h1Count: auditResult.h1Count,
+      h1TagsCount: auditResult.h1Tags?.length ?? 0,
+      internalLinks: auditResult.internalLinks,
+      internalLinksDataCount: auditResult.internalLinksData?.length ?? 0,
+      externalLinks: auditResult.externalLinks,
+      externalLinksDataCount: auditResult.externalLinksData?.length ?? 0,
+      imageCount: auditResult.imageCount,
+      imagesDataCount: auditResult.imagesData?.length ?? 0,
+      missingAltCount: auditResult.missingAltCount,
+      missingAltImagesCount: auditResult.missingAltImages?.length ?? 0,
+      titleLength: auditResult.titleLength,
+      metaDescriptionLength: auditResult.metaDescriptionLength,
+    }));
+
     let audit;
     try {
-      audit = await prisma.audit.create({
-        data: {
-          userId: user.id,
-          websiteUrl: targetUrl,
-          pageTitle: auditResult.pageTitle,
-          metaDescription: auditResult.metaDescription || null,
-          seoScore: auditResult.seoScore,
-          performanceScore: auditResult.performanceScore,
-          accessibilityScore: auditResult.accessibilityScore,
-          h1Count: auditResult.h1Count,
-          h1Tags: auditResult.h1Tags as unknown as Prisma.InputJsonValue,
-          imageCount: auditResult.imageCount,
-          missingAltCount: auditResult.missingAltCount,
-          imagesData: auditResult.imagesData as unknown as Prisma.InputJsonValue,
-          missingAltImages: auditResult.missingAltImages as unknown as Prisma.InputJsonValue,
-          internalLinks: auditResult.internalLinks,
-          internalLinksData: auditResult.internalLinksData as unknown as Prisma.InputJsonValue,
-          externalLinks: auditResult.externalLinks,
-          externalLinksData: auditResult.externalLinksData as unknown as Prisma.InputJsonValue,
-          titleLength: auditResult.titleLength,
-          metaDescriptionLength: auditResult.metaDescriptionLength,
-          aiRecommendations: auditResult.aiRecommendations as unknown as Prisma.InputJsonValue,
-        },
-      });
+      const createData = {
+        userId: user.id,
+        websiteUrl: targetUrl,
+        pageTitle: auditResult.pageTitle,
+        metaDescription: auditResult.metaDescription || null,
+        seoScore: auditResult.seoScore,
+        performanceScore: auditResult.performanceScore,
+        accessibilityScore: auditResult.accessibilityScore,
+        h1Count: auditResult.h1Count,
+        h1Tags: auditResult.h1Tags as unknown as Prisma.InputJsonValue,
+        imageCount: auditResult.imageCount,
+        missingAltCount: auditResult.missingAltCount,
+        imagesData: auditResult.imagesData as unknown as Prisma.InputJsonValue,
+        missingAltImages: auditResult.missingAltImages as unknown as Prisma.InputJsonValue,
+        internalLinks: auditResult.internalLinks,
+        internalLinksData: auditResult.internalLinksData as unknown as Prisma.InputJsonValue,
+        externalLinks: auditResult.externalLinks,
+        externalLinksData: auditResult.externalLinksData as unknown as Prisma.InputJsonValue,
+        titleLength: auditResult.titleLength,
+        metaDescriptionLength: auditResult.metaDescriptionLength,
+        aiRecommendations: auditResult.aiRecommendations as unknown as Prisma.InputJsonValue,
+      };
+      console.log("[AUDIT CREATE] Saving to DB:", JSON.stringify({
+        h1TagsLength: Array.isArray(auditResult.h1Tags) ? auditResult.h1Tags.length : 0,
+        internalLinksDataLength: Array.isArray(auditResult.internalLinksData) ? auditResult.internalLinksData.length : 0,
+        externalLinksDataLength: Array.isArray(auditResult.externalLinksData) ? auditResult.externalLinksData.length : 0,
+        imagesDataLength: Array.isArray(auditResult.imagesData) ? auditResult.imagesData.length : 0,
+        missingAltImagesLength: Array.isArray(auditResult.missingAltImages) ? auditResult.missingAltImages.length : 0,
+      }));
+      audit = await prisma.audit.create({ data: createData });
+      console.log("[AUDIT CREATE] Saved successfully, ID:", audit.id);
+      console.log("[AUDIT CREATE] Saved internalLinks:", audit.internalLinks, "internalLinksData length:", Array.isArray(audit.internalLinksData) ? audit.internalLinksData.length : typeof audit.internalLinksData);
     } catch (dbError) {
       console.error("Audit save failed:", dbError);
       return NextResponse.json(auditResult);

@@ -3,6 +3,17 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
 
+function normalizeJsonField(val: unknown) {
+  if (val === null || val === undefined) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const parsed = typeof val === "string" ? JSON.parse(val) : val;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -35,7 +46,24 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
-    return NextResponse.json(audit);
+    const result = {
+      ...audit,
+      h1Tags: normalizeJsonField(audit.h1Tags),
+      imagesData: normalizeJsonField(audit.imagesData),
+      missingAltImages: normalizeJsonField(audit.missingAltImages),
+      internalLinksData: normalizeJsonField(audit.internalLinksData),
+      externalLinksData: normalizeJsonField(audit.externalLinksData),
+      aiRecommendations: normalizeJsonField(audit.aiRecommendations),
+    };
+
+    console.log("[AUDIT GET] ID:", id);
+    console.log("[AUDIT GET] Raw DB h1Tags:", JSON.stringify(audit.h1Tags));
+    console.log("[AUDIT GET] Raw DB internalLinksData type:", typeof audit.internalLinksData, "isArray:", Array.isArray(audit.internalLinksData));
+    console.log("[AUDIT GET] internalLinks count:", result.internalLinks, "internalLinksData length:", result.internalLinksData?.length ?? 0);
+    console.log("[AUDIT GET] h1Count:", result.h1Count, "h1Tags length:", result.h1Tags?.length ?? 0);
+    console.log("[AUDIT GET] externalLinks count:", result.externalLinks, "externalLinksData length:", result.externalLinksData?.length ?? 0);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Audit fetch error:", error);
     return NextResponse.json(
