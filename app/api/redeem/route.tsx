@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 
 async function ensureTestCodes() {
   const existing = await prisma.redeemCode.findFirst({
-    where: { code: { in: ["STARTER-TEST123", "PRO-TEST123", "ENT-TEST123"] } },
+    where: { code: { in: ["WEB-ST-TEST1234", "WEB-PRO-TEST1234", "WEB-LIFE-TEST1234"] } },
   });
   if (existing) return;
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         where: { id: redeemCode.id },
         data: {
           isUsed: true,
-          usedBy: user.id,
+          usedByUserId: user.id,
           usedAt: new Date(),
         },
       }),

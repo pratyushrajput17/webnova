@@ -10,28 +10,22 @@ export async function GET() {
 
   try {
     const codes = await prisma.redeemCode.findMany({
-      where: { isUsed: true, usedBy: { not: null } },
+      where: { isUsed: true, usedByUserId: { not: null } },
       orderBy: { usedAt: "desc" },
       take: 200,
+      include: {
+        usedBy: {
+          select: { id: true, email: true, name: true },
+        },
+      },
     });
-
-    const userIds = codes
-      .map((c) => c.usedBy)
-      .filter((id): id is string => id !== null);
-
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, email: true, name: true },
-    });
-
-    const userMap = new Map(users.map((u) => [u.id, u]));
 
     const history = codes.map((code) => ({
       id: code.id,
       code: code.code,
       plan: code.plan,
       redeemedAt: code.usedAt,
-      user: code.usedBy ? userMap.get(code.usedBy) ?? null : null,
+      user: code.usedBy,
     }));
 
     return NextResponse.json({ history });

@@ -182,7 +182,7 @@ export default function RedeemPage() {
                   <Gift className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                   <input
                     type="text"
-                    placeholder="STARTER-XXXXXX"
+                    placeholder="WEB-ST-XXXXXXXX"
                     value={code}
                     onChange={(e) => {
                       setCode(e.target.value.toUpperCase());

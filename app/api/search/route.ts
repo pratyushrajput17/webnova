@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       prisma.redeemCode.findMany({
         where: {
           isUsed: true,
-          usedBy: user.id,
+          usedByUserId: user.id,
           code: { contains: q, mode: "insensitive" },
         },
         select: { code: true, plan: true, usedAt: true },

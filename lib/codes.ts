@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
 
 const CODE_PREFIXES: Record<string, string> = {
-  STARTER: "STARTER",
-  PRO: "PRO",
-  LIFETIME: "LIFE",
+  STARTER: "WEB-ST",
+  PRO: "WEB-PRO",
+  LIFETIME: "WEB-LIFE",
   ENTERPRISE: "ENT",
 };
 
@@ -14,13 +14,21 @@ const PLAN_DURATIONS: Record<string, number> = {
   ENTERPRISE: 30,
 };
 
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+function randomCode(length: number): string {
+  let result = "";
+  const bytes = randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    result += CHARS[bytes[i] % CHARS.length];
+  }
+  return result;
+}
+
 export function generateCode(plan: string): string {
   const prefix = CODE_PREFIXES[plan];
   if (!prefix) throw new Error(`Unknown plan: ${plan}`);
-  const suffix = randomBytes(3)
-    .toString("hex")
-    .toUpperCase()
-    .slice(0, 6);
+  const suffix = randomCode(8);
   return `${prefix}-${suffix}`;
 }
 
@@ -30,7 +38,7 @@ export function generateBulkCodes(
 ): { code: string; plan: string; duration: number }[] {
   const codes: { code: string; plan: string; duration: number }[] = [];
   const seen = new Set<string>();
-  const duration = PLAN_DURATIONS[plan] ?? 30;
+  const duration = PLAN_DURATIONS[plan] ?? 365;
 
   while (codes.length < count) {
     const code = generateCode(plan);
@@ -50,10 +58,19 @@ export function parseCode(input: string): {
   const raw = input.trim().toUpperCase();
   const parts = raw.split("-");
 
-  if (parts.length >= 2) {
-    const prefix = parts[0];
+  if (parts.length >= 3) {
+    const fullPrefix = `${parts[0]}-${parts[1]}`;
     const matchingPlan = Object.entries(CODE_PREFIXES).find(
-      ([, p]) => p === prefix
+      ([, p]) => p === fullPrefix
+    );
+    if (matchingPlan) {
+      return { plan: matchingPlan[0], raw };
+    }
+  }
+
+  if (parts.length >= 2) {
+    const matchingPlan = Object.entries(CODE_PREFIXES).find(
+      ([, p]) => p === parts[0]
     );
     if (matchingPlan) {
       return { plan: matchingPlan[0], raw };
@@ -64,7 +81,7 @@ export function parseCode(input: string): {
 }
 
 export function getDurationForPlan(plan: string): number {
-  return PLAN_DURATIONS[plan] ?? 30;
+  return PLAN_DURATIONS[plan] ?? 365;
 }
 
 export function seedTestCodes(): {
@@ -73,9 +90,9 @@ export function seedTestCodes(): {
   duration: number;
 }[] {
   return [
-    { code: "STARTER-TEST123", plan: "STARTER", duration: 365 },
-    { code: "PRO-TEST123", plan: "PRO", duration: 365 },
-    { code: "LIFE-TEST123", plan: "LIFETIME", duration: 1825 },
+    { code: "WEB-ST-TEST1234", plan: "STARTER", duration: 365 },
+    { code: "WEB-PRO-TEST1234", plan: "PRO", duration: 365 },
+    { code: "WEB-LIFE-TEST1234", plan: "LIFETIME", duration: 1825 },
   ];
 }
 

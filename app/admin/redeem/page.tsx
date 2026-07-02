@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 
 const PLAN_CONFIG = [
-  { key: "STARTER", label: "Starter", icon: Star, color: "from-blue-400 to-blue-500", shadow: "shadow-blue-200/50", bg: "bg-blue-50 text-blue-700" },
-  { key: "PRO", label: "Professional", icon: Zap, color: "from-indigo-400 to-indigo-500", shadow: "shadow-indigo-200/50", bg: "bg-indigo-50 text-indigo-700" },
-  { key: "LIFETIME", label: "Lifetime Access", icon: Sparkles, color: "from-emerald-400 to-emerald-500", shadow: "shadow-emerald-200/50", bg: "bg-emerald-50 text-emerald-700" },
-  { key: "ENTERPRISE", label: "Enterprise", icon: Crown, color: "from-amber-400 to-amber-500", shadow: "shadow-amber-200/50", bg: "bg-amber-50 text-amber-700" },
+  { key: "STARTER", label: "Starter", icon: Star, color: "from-blue-400 to-blue-500", shadow: "shadow-blue-200/50", bg: "bg-blue-50 text-blue-700", duration: "1-year" },
+  { key: "PRO", label: "Professional", icon: Zap, color: "from-indigo-400 to-indigo-500", shadow: "shadow-indigo-200/50", bg: "bg-indigo-50 text-indigo-700", duration: "1-year" },
+  { key: "LIFETIME", label: "Lifetime Access", icon: Sparkles, color: "from-emerald-400 to-emerald-500", shadow: "shadow-emerald-200/50", bg: "bg-emerald-50 text-emerald-700", duration: "5-year" },
+  { key: "ENTERPRISE", label: "Enterprise", icon: Crown, color: "from-amber-400 to-amber-500", shadow: "shadow-amber-200/50", bg: "bg-amber-50 text-amber-700", duration: "30-day" },
 ];
 
 const BULK_OPTIONS = [10, 50, 100, 500];
@@ -113,7 +113,7 @@ export default function AdminRedeem() {
                   </div>
                   <div>
                     <p className="font-medium text-zinc-800">{plan.label}</p>
-                    <p className="text-xs text-zinc-500">30-day subscription</p>
+                    <p className="text-xs text-zinc-500">{plan.duration} subscription</p>
                   </div>
                 </button>
               );
