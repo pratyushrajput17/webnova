@@ -1,14 +1,32 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
+export interface LinkItem {
+  href: string;
+  text: string;
+}
+
+export interface ImageItem {
+  src: string;
+  alt: string;
+  hasAlt: boolean;
+}
+
 export interface AuditResult {
   pageTitle: string;
   metaDescription: string;
   h1Count: number;
+  h1Tags: string[];
   imageCount: number;
   missingAltCount: number;
   internalLinks: number;
+  internalLinksData: LinkItem[];
   externalLinks: number;
+  externalLinksData: LinkItem[];
+  imagesData: ImageItem[];
+  missingAltImages: { src: string }[];
+  titleLength: number;
+  metaDescriptionLength: number;
   seoScore: number;
   performanceScore: number;
   accessibilityScore: number;
@@ -50,13 +68,17 @@ export function normalizeUrl(url: string): string {
 
 function calculateSeoScore(data: {
   title: string;
+  titleLength: number;
   metaDescription: string;
+  metaDescriptionLength: number;
   h1Count: number;
   missingAltCount: number;
 }): number {
   let score = 100;
   if (!data.title) score -= 20;
+  else if (data.titleLength < 30 || data.titleLength > 60) score -= 5;
   if (!data.metaDescription) score -= 20;
+  else if (data.metaDescriptionLength < 50 || data.metaDescriptionLength > 160) score -= 5;
   if (data.h1Count === 0) score -= 15;
   if (data.missingAltCount > 5) score -= 10;
   return Math.max(0, score);
@@ -93,7 +115,10 @@ function calculateAccessibilityScore(data: {
 
 function generateRecommendations(data: {
   pageTitle: string;
+  titleLength: number;
   metaDescription: string;
+  metaDescriptionLength: number;
+  h1Tags: string[];
   h1Count: number;
   imageCount: number;
   missingAltCount: number;
@@ -106,18 +131,20 @@ function generateRecommendations(data: {
   const recs: string[] = [];
   if (!data.pageTitle) {
     recs.push("Add a descriptive title tag — it's the first thing search engines and users see.");
-  } else if (data.pageTitle.length < 30 || data.pageTitle.length > 60) {
+  } else if (data.titleLength < 30 || data.titleLength > 60) {
     recs.push("Optimize your title tag length (aim for 30–60 characters) for better search visibility.");
   }
   if (!data.metaDescription) {
     recs.push("Write a compelling meta description to improve click-through rates from search results.");
-  } else if (data.metaDescription.length < 50) {
+  } else if (data.metaDescriptionLength < 50) {
     recs.push("Your meta description is short. Expand it to 120–158 characters for better engagement.");
+  } else if (data.metaDescriptionLength > 160) {
+    recs.push("Your meta description is too long (over 160 characters). Search engines may truncate it.");
   }
   if (data.h1Count === 0) {
     recs.push("Include at least one H1 heading to define your page's primary topic for search engines.");
   } else if (data.h1Count > 1) {
-    recs.push("Limit to one H1 heading per page — multiple H1s can confuse search engine crawlers.");
+    recs.push(`Your page has ${data.h1Count} H1 tags. Limit to one H1 per page to avoid confusing search engines.`);
   }
   if (data.missingAltCount > 0) {
     recs.push(`Add descriptive alt text to ${data.missingAltCount} image(s) to boost accessibility and give screen readers useful context.`);
@@ -179,24 +206,38 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     $("meta[property='og:description']").attr("content")?.trim() ||
     "";
 
-  const h1Count = $("h1").length;
+  const titleLength = pageTitle.length;
+  const metaDescriptionLength = metaDescription.length;
 
-  const images = $("img");
-  const imageCount = images.length;
+  const h1Tags: string[] = [];
+  $("h1").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text) h1Tags.push(text);
+  });
+  const h1Count = h1Tags.length;
+
+  const imagesData: ImageItem[] = [];
+  const missingAltImages: { src: string }[] = [];
+  const imageElements = $("img");
+  const imageCount = imageElements.length;
   let missingAltCount = 0;
 
-  images.each((_, el) => {
-    const alt = $(el).attr("alt");
-    if (alt === undefined || alt.trim() === "") {
+  imageElements.each((_, el) => {
+    const src = $(el).attr("src")?.trim() || "";
+    const alt = $(el).attr("alt")?.trim() || "";
+    const hasAlt = alt !== "";
+    if (!hasAlt && src) {
       missingAltCount++;
+      missingAltImages.push({ src });
     }
+    imagesData.push({ src, alt, hasAlt });
   });
 
   const baseUrl = response.request?.res?.responseUrl || targetUrl;
   const base = new URL(baseUrl);
 
-  let internalLinks = 0;
-  let externalLinks = 0;
+  const internalLinksData: LinkItem[] = [];
+  const externalLinksData: LinkItem[] = [];
 
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href")?.trim();
@@ -205,19 +246,25 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     }
     try {
       const resolved = new URL(href, base.origin);
+      const text = $(el).text().trim().substring(0, 200) || href;
       if (resolved.hostname === base.hostname) {
-        internalLinks++;
+        internalLinksData.push({ href: resolved.href, text });
       } else {
-        externalLinks++;
+        externalLinksData.push({ href: resolved.href, text });
       }
     } catch {
       // skip invalid URLs
     }
   });
 
+  const internalLinks = internalLinksData.length;
+  const externalLinks = externalLinksData.length;
+
   const seoScore = calculateSeoScore({
     title: pageTitle,
+    titleLength,
     metaDescription,
+    metaDescriptionLength,
     h1Count,
     missingAltCount,
   });
@@ -236,7 +283,10 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
 
   const aiRecommendations = generateRecommendations({
     pageTitle,
+    titleLength,
     metaDescription,
+    metaDescriptionLength,
+    h1Tags,
     h1Count,
     imageCount,
     missingAltCount,
@@ -251,10 +301,17 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     pageTitle,
     metaDescription,
     h1Count,
+    h1Tags,
     imageCount,
     missingAltCount,
+    imagesData,
+    missingAltImages,
     internalLinks,
+    internalLinksData,
     externalLinks,
+    externalLinksData,
+    titleLength,
+    metaDescriptionLength,
     seoScore,
     performanceScore,
     accessibilityScore,

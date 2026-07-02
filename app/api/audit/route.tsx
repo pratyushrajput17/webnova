@@ -9,6 +9,7 @@ import {
   analyzeWebsite,
 } from "@/lib/audit";
 import { checkQuota, needsReset } from "@/lib/quota";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import type { ReactElement } from "react";
 
 export async function POST(request: NextRequest) {
@@ -123,11 +124,18 @@ export async function POST(request: NextRequest) {
           performanceScore: auditResult.performanceScore,
           accessibilityScore: auditResult.accessibilityScore,
           h1Count: auditResult.h1Count,
+          h1Tags: auditResult.h1Tags as unknown as Prisma.InputJsonValue,
           imageCount: auditResult.imageCount,
           missingAltCount: auditResult.missingAltCount,
+          imagesData: auditResult.imagesData as unknown as Prisma.InputJsonValue,
+          missingAltImages: auditResult.missingAltImages as unknown as Prisma.InputJsonValue,
           internalLinks: auditResult.internalLinks,
+          internalLinksData: auditResult.internalLinksData as unknown as Prisma.InputJsonValue,
           externalLinks: auditResult.externalLinks,
-          aiRecommendations: auditResult.aiRecommendations,
+          externalLinksData: auditResult.externalLinksData as unknown as Prisma.InputJsonValue,
+          titleLength: auditResult.titleLength,
+          metaDescriptionLength: auditResult.metaDescriptionLength,
+          aiRecommendations: auditResult.aiRecommendations as unknown as Prisma.InputJsonValue,
         },
       });
     } catch (dbError) {

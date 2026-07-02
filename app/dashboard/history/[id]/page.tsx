@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AuditReportPDF from "@/components/pdf/AuditReportPDF";
 import { downloadPDF, sanitizeFilename } from "@/lib/pdf";
+import AuditDetailSections from "@/components/dashboard/AuditDetailSections";
 import {
   ArrowLeft,
   Trash2,
@@ -26,7 +27,19 @@ import {
   Eye,
   Zap,
   FileDown,
+  Download,
 } from "lucide-react";
+
+interface LinkItem {
+  href: string;
+  text: string;
+}
+
+interface ImageItem {
+  src: string;
+  alt: string;
+  hasAlt: boolean;
+}
 
 interface AuditDetail {
   id: string;
@@ -37,10 +50,17 @@ interface AuditDetail {
   performanceScore: number;
   accessibilityScore: number;
   h1Count: number;
+  h1Tags?: string[];
   imageCount: number;
   missingAltCount: number;
+  imagesData?: ImageItem[];
+  missingAltImages?: { src: string }[];
   internalLinks: number;
+  internalLinksData?: LinkItem[];
   externalLinks: number;
+  externalLinksData?: LinkItem[];
+  titleLength?: number;
+  metaDescriptionLength?: number;
   createdAt: string;
   aiRecommendations: string[];
 }
@@ -326,6 +346,20 @@ export default function AuditDetailPage() {
     }
   }, [audit]);
 
+  const handleDownloadJSON = useCallback(() => {
+    if (!audit) return;
+    const siteName = sanitizeFilename(audit.websiteUrl);
+    const blob = new Blob([JSON.stringify(audit, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-report-${siteName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [audit]);
+
   if (loading) return <LoadingSkeleton />;
 
   if (error || !audit) {
@@ -391,6 +425,13 @@ export default function AuditDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleDownloadJSON}
+            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-5 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+          >
+            <Download className="h-4 w-4" />
+            JSON
+          </button>
           <button
             onClick={handleDownloadPDF}
             disabled={pdfLoading}
@@ -497,6 +538,18 @@ export default function AuditDetailPage() {
           })}
         </div>
       </div>
+
+      <AuditDetailSections
+        data={{
+          h1Tags: audit.h1Tags,
+          internalLinksData: audit.internalLinksData,
+          externalLinksData: audit.externalLinksData,
+          imagesData: audit.imagesData,
+          missingAltImages: audit.missingAltImages,
+          titleLength: audit.titleLength,
+          metaDescriptionLength: audit.metaDescriptionLength,
+        }}
+      />
 
       {recommendations.length > 0 && (
         <motion.div

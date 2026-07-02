@@ -50,22 +50,29 @@ model RedeemCode {
 }
 
 model Audit {
-  id                String   @id @default(cuid())
-  userId            String
-  websiteUrl        String
-  pageTitle         String
-  metaDescription   String?
-  seoScore          Int
-  performanceScore  Int      @default(0)
-  accessibilityScore Int     @default(0)
-  h1Count           Int
-  imageCount        Int
-  missingAltCount   Int
-  internalLinks     Int
-  externalLinks     Int
-  aiRecommendations Json     @default("[]")
-  createdAt         DateTime @default(now())
-  user              User     @relation(fields: [userId], references: [id])
+  id                  String   @id @default(cuid())
+  userId              String
+  websiteUrl          String
+  pageTitle           String
+  metaDescription     String?
+  seoScore            Int
+  performanceScore    Int      @default(0)
+  accessibilityScore  Int      @default(0)
+  h1Count             Int
+  h1Tags              Json     @default("[]")
+  imageCount          Int
+  missingAltCount     Int
+  imagesData          Json     @default("[]")
+  missingAltImages    Json     @default("[]")
+  internalLinks       Int
+  internalLinksData   Json     @default("[]")
+  externalLinks       Int
+  externalLinksData   Json     @default("[]")
+  titleLength         Int      @default(0)
+  metaDescriptionLength Int    @default(0)
+  aiRecommendations   Json     @default("[]")
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
