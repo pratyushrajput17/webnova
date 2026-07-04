@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "WebNova",
   description: "AI-powered SEO and website audit platform",
+  icons: null,
 };
 
 export default function RootLayout({

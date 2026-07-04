@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 export const metadata: Metadata = {
-  title: "Dashboard - WebNova",
+  title: "Dashboard \u2013 WebNova",
   description: "WebNova dashboard",
 };
 
