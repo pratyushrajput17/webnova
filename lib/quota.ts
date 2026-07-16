@@ -1,6 +1,6 @@
 export const AUDIT_LIMITS: Record<string, number> = {
   FREE: 3,
-  STARTER: 300,
+  STARTER: 100,
   PRO: -1,
   LIFETIME: -1,
   ENTERPRISE: -1,
@@ -8,7 +8,7 @@ export const AUDIT_LIMITS: Record<string, number> = {
 
 export const COMPETITOR_LIMITS: Record<string, number> = {
   FREE: 3,
-  STARTER: 25,
+  STARTER: 10,
   PRO: -1,
   LIFETIME: -1,
   ENTERPRISE: -1,
