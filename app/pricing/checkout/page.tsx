@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -20,8 +20,15 @@ import {
   UserCheck,
   Rocket,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { PLANS } from "@/lib/pricing";
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
 
 const iconMap: Record<string, typeof Search> = {
   Search,
@@ -48,12 +55,97 @@ function FeatureIcon({ name }: { name: string }) {
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const planKey = searchParams.get("plan")?.toUpperCase() ?? "";
 
   const plan = useMemo(
     () => PLANS.find((p) => p.key === planKey),
     [planKey],
   );
+
+  const handlePayment = useCallback(async () => {
+    if (!plan) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: plan.key }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create order.");
+      }
+
+      const order = await res.json();
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => {
+        const options = {
+          key: order.key_id,
+          amount: order.amount,
+          currency: order.currency,
+          name: "WebNova",
+          description: `${plan.name} Plan`,
+          order_id: order.id,
+          prefill: { contact: "", email: "" },
+          theme: { color: "#18181b" },
+          modal: {
+            ondismiss: () => setLoading(false),
+          },
+          handler: async (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          }) => {
+            try {
+              const verifyRes = await fetch("/api/payment/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  plan: plan.key,
+                }),
+              });
+
+              if (!verifyRes.ok) {
+                const errData = await verifyRes.json();
+                throw new Error(errData.error || "Payment verification failed.");
+              }
+
+              router.push("/dashboard/billing?payment=success");
+            } catch (err) {
+              setError(
+                err instanceof Error ? err.message : "Payment verification failed."
+              );
+              setLoading(false);
+            }
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      };
+      script.onerror = () => {
+        setError("Failed to load payment gateway. Please try again.");
+        setLoading(false);
+      };
+      document.body.appendChild(script);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
+      setLoading(false);
+    }
+  }, [plan, router]);
 
   if (!plan) {
     return (
@@ -189,20 +281,28 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                  <p className="text-xs text-zinc-400">
-                    Your selected plan will be activated immediately after
-                    payment. You can upgrade or cancel at any time.
-                  </p>
-                </div>
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
 
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-800">
-                  <Sparkles className="h-4 w-4" />
-                  Proceed to Payment
+                <button
+                  onClick={handlePayment}
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {loading ? "Processing..." : "Proceed to Payment"}
                 </button>
 
                 <p className="text-center text-xs text-zinc-400">
-                  Secure checkout powered by WebNova
+                  Secure checkout powered by Razorpay
                 </p>
               </div>
             </div>
