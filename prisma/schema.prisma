@@ -78,10 +78,13 @@ model Audit {
   titleLength         Int      @default(0)
   metaDescriptionLength Int    @default(0)
   aiRecommendations   Json     @default("[]")
+  auditType           String   @default("standard")
   createdAt           DateTime @default(now())
   user                User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, auditType])
 }
 
 model Notification {

@@ -14,8 +14,8 @@ import {
 import {
   Globe,
   TrendingUp,
-  Users,
   FileText,
+  BarChart3,
   Loader2,
 } from "lucide-react";
 import axios from "axios";
@@ -27,10 +27,9 @@ import UsageCard from "@/components/dashboard/UsageCard";
 
 interface DashboardData {
   totalAudits: number;
+  auditsThisMonth: number;
   averageSeoScore: number;
-  competitorsTracked: number;
   reportsGenerated: number;
-  issuesFound: number;
   plan: string;
   subscriptionEndsAt: string | null;
   createdAt: string;
@@ -75,19 +74,19 @@ export default function DashboardPage() {
   const stats = [
     { title: "Total Audits", value: data?.totalAudits ?? 0, icon: Globe },
     {
+      title: "This Month Audits",
+      value: data?.auditsThisMonth ?? 0,
+      icon: FileText,
+    },
+    {
       title: "Average SEO Score",
       value: data ? `${data.averageSeoScore}%` : "0%",
       icon: TrendingUp,
     },
     {
-      title: "Competitor Reports",
-      value: data?.competitorsTracked ?? 0,
-      icon: Users,
-    },
-    {
       title: "Reports Generated",
       value: data?.reportsGenerated ?? 0,
-      icon: FileText,
+      icon: BarChart3,
     },
   ];
 

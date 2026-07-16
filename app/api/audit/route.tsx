@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
         titleLength: auditResult.titleLength,
         metaDescriptionLength: auditResult.metaDescriptionLength,
         aiRecommendations: auditResult.aiRecommendations as unknown as Prisma.InputJsonValue,
+        auditType: "standard",
       };
       console.log("[AUDIT CREATE] Saving to DB:", JSON.stringify({
         h1TagsLength: Array.isArray(auditResult.h1Tags) ? auditResult.h1Tags.length : 0,

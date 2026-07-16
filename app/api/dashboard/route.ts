@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
+import { getUserUsage } from "@/lib/usage";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -17,7 +18,7 @@ export async function GET() {
 
     const user = await getOrCreateUser(clerkUserId);
 
-    const [audits, competitorCount] = await Promise.all([
+    const [audits, usage] = await Promise.all([
       prisma.audit.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
@@ -30,15 +31,13 @@ export async function GET() {
           createdAt: true,
         },
       }),
-      prisma.competitorComparison.count({ where: { userId: user.id } }),
+      getUserUsage(user.id),
     ]);
 
     const totalAudits = audits.length;
     const averageSeoScore = totalAudits > 0
       ? Math.round(audits.reduce((sum, a) => sum + a.seoScore, 0) / totalAudits)
       : 0;
-    const competitorsTracked = competitorCount;
-    const issuesFound = audits.reduce((sum, a) => sum + a.missingAltCount, 0);
 
     const monthMap = new Map<string, { total: number; count: number }>();
     for (const audit of audits) {
@@ -79,7 +78,7 @@ export async function GET() {
     if (totalAudits === 0) {
       upcomingTasks.push({ text: "Run your first website audit", completed: false });
     }
-    if (competitorCount === 0) {
+    if (usage.competitorAnalysesUsed === 0) {
       upcomingTasks.push({ text: "Analyze a competitor", completed: false });
     }
     if (totalAudits > 0 && audits.some((a) => a.seoScore < 80)) {
@@ -97,11 +96,10 @@ export async function GET() {
     }));
 
     return NextResponse.json({
-      totalAudits,
+      totalAudits: usage.totalAudits,
+      auditsThisMonth: usage.auditsThisMonth,
       averageSeoScore,
-      competitorsTracked,
-      reportsGenerated: totalAudits,
-      issuesFound,
+      reportsGenerated: usage.reportsGenerated,
       plan: user.plan,
       subscriptionEndsAt: user.subscriptionEndsAt?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
@@ -115,9 +113,9 @@ export async function GET() {
     return NextResponse.json(
       {
         totalAudits: 0,
+        auditsThisMonth: 0,
         averageSeoScore: 0,
-        competitorsTracked: 0,
-        issuesFound: 0,
+        reportsGenerated: 0,
         chartData: [],
         recentAudits: [],
         recentActivity: [],

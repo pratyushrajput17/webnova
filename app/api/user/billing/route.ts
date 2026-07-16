@@ -8,6 +8,7 @@ import {
   needsReset,
   getAuditResetDays,
 } from "@/lib/quota";
+import { getUserUsage } from "@/lib/usage";
 import { PLANS, PLAN_DISPLAY } from "@/lib/pricing";
 
 export async function GET() {
@@ -50,9 +51,8 @@ export async function GET() {
     const planConfig = PLANS.find((p) => p.key === user.plan);
     const planDisplay = PLAN_DISPLAY[user.plan] ?? PLAN_DISPLAY.FREE;
 
-    const [totalAudits, competitorCount, redeemHistory] = await Promise.all([
-      prisma.audit.count({ where: { userId: user.id } }),
-      prisma.competitorComparison.count({ where: { userId: user.id } }),
+    const [usage, redeemHistory] = await Promise.all([
+      getUserUsage(user.id),
       prisma.redeemCode.findMany({
         where: { usedByUserId: user.id },
         orderBy: { usedAt: "desc" },
@@ -101,8 +101,9 @@ export async function GET() {
         remaining: compQuota.remaining,
         isUnlimited: compQuota.isUnlimited,
       },
-      totalAudits,
-      competitorsTracked: competitorCount,
+      totalAudits: usage.totalAudits,
+      auditsThisMonth: usage.auditsThisMonth,
+      competitorsTracked: usage.competitorAnalysesUsed,
       redeemHistory,
       paymentMethod: null,
     });

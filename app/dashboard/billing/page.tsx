@@ -51,6 +51,7 @@ interface BillingData {
   audit: QuotaInfo;
   competitor: QuotaInfo;
   totalAudits: number;
+  auditsThisMonth: number;
   competitorsTracked: number;
   redeemHistory: RedeemEntry[];
   paymentMethod: null;
@@ -265,6 +266,30 @@ export default function BillingPage() {
             <div>
               <p className="text-sm text-zinc-500">Reports Generated</p>
               <p className="mt-1 text-lg font-semibold">{data.totalAudits}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className="text-sm text-zinc-500">Audits Used</p>
+              <p className="mt-1 text-lg font-semibold">{data.audit.used}</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Audits Remaining</p>
+              <p className="mt-1 text-lg font-semibold">
+                {data.audit.isUnlimited ? "∞" : data.audit.remaining}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className="text-sm text-zinc-500">Competitor Analyses Used</p>
+              <p className="mt-1 text-lg font-semibold">{data.competitor.used}</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Competitor Analyses Remaining</p>
+              <p className="mt-1 text-lg font-semibold">
+                {data.competitor.isUnlimited ? "∞" : data.competitor.remaining}
+              </p>
             </div>
           </div>
 
