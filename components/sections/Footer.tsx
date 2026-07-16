@@ -17,7 +17,7 @@ export default function Footer() {
               href="mailto:dev.webnovaseo@gmail.com?subject=WebNova%20Support%20Request"
               className="text-sm text-zinc-500 transition-colors hover:text-zinc-900"
             >
-              Support: dev.webnovaseo@gmail.com
+              Contact
             </a>
             <div className="flex items-center gap-6">
               <Link
