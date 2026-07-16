@@ -38,9 +38,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Create order error:", error);
-    return NextResponse.json(
-      { error: "Failed to create payment order." },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to create payment order.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
