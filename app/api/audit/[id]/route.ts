@@ -56,12 +56,24 @@ export async function GET(
       aiRecommendations: normalizeJsonField(audit.aiRecommendations),
     };
 
-    console.log("[AUDIT GET] ID:", id);
-    console.log("[AUDIT GET] Raw DB h1Tags:", JSON.stringify(audit.h1Tags));
-    console.log("[AUDIT GET] Raw DB internalLinksData type:", typeof audit.internalLinksData, "isArray:", Array.isArray(audit.internalLinksData));
-    console.log("[AUDIT GET] internalLinks count:", result.internalLinks, "internalLinksData length:", result.internalLinksData?.length ?? 0);
-    console.log("[AUDIT GET] h1Count:", result.h1Count, "h1Tags length:", result.h1Tags?.length ?? 0);
-    console.log("[AUDIT GET] externalLinks count:", result.externalLinks, "externalLinksData length:", result.externalLinksData?.length ?? 0);
+    const checks = [
+      { metric: "h1Count", count: result.h1Count, actual: result.h1Tags?.length ?? 0 },
+      { metric: "imageCount", count: result.imageCount, actual: result.imagesData?.length ?? 0 },
+      { metric: "missingAltCount", count: result.missingAltCount, actual: result.missingAltImages?.length ?? 0 },
+      { metric: "internalLinks", count: result.internalLinks, actual: result.internalLinksData?.length ?? 0 },
+      { metric: "externalLinks", count: result.externalLinks, actual: result.externalLinksData?.length ?? 0 },
+    ];
+
+    const mismatches = checks.filter((c) => {
+      const hasDetailData = c.actual > 0;
+      return hasDetailData && c.count !== c.actual;
+    });
+
+    if (mismatches.length > 0) {
+      console.warn("[AUDIT INTEGRITY] Retrieval mismatches for", id, ":", mismatches);
+    } else if (checks.some((c) => c.actual > 0)) {
+      console.log("[AUDIT INTEGRITY] All counts match for", id);
+    }
 
     return NextResponse.json(result);
   } catch (error) {

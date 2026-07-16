@@ -87,7 +87,9 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
         {badges.map((badge) => {
           const Icon = badge.icon;
           const isOpen = openSection === badge.id;
-          const actualCount = badge.id === "meta" ? 0 : Math.max(hasDetailData(badge.arr) ? badge.arr!.length : 0, badge.count);
+          const detailLen = hasDetailData(badge.arr) ? badge.arr!.length : 0;
+          const showCount = badge.id === "meta" ? 0 : Math.max(badge.count, detailLen);
+          const hasMismatch = detailLen > 0 && badge.count !== detailLen;
 
           return (
             <div
@@ -103,11 +105,17 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
                   <span className="text-sm font-medium text-zinc-700">
                     {badge.label}
                   </span>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badge.color}`}
-                  >
-                    {actualCount}
-                  </span>
+                  {hasMismatch ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      {badge.count} <span className="text-amber-400">·</span> {detailLen}
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badge.color}`}
+                    >
+                      {showCount}
+                    </span>
+                  )}
                 </div>
                 <ChevronDown
                   className={`h-4 w-4 text-zinc-400 transition-transform ${

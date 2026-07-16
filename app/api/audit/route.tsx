@@ -9,6 +9,17 @@ import {
   analyzeWebsite,
 } from "@/lib/audit";
 import { checkAuditQuota, needsReset, getAuditResetDays } from "@/lib/quota";
+
+function normalizeJsonField(val: unknown) {
+  if (val === null || val === undefined) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const parsed = typeof val === "string" ? JSON.parse(val) : val;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 import type { Prisma } from "@/lib/generated/prisma/client";
 import type { ReactElement } from "react";
 
@@ -162,7 +173,27 @@ export async function POST(request: NextRequest) {
       }));
       audit = await prisma.audit.create({ data: createData });
       console.log("[AUDIT CREATE] Saved successfully, ID:", audit.id);
-      console.log("[AUDIT CREATE] Saved internalLinks:", audit.internalLinks, "internalLinksData length:", Array.isArray(audit.internalLinksData) ? audit.internalLinksData.length : typeof audit.internalLinksData);
+
+      const savedH1Tags = normalizeJsonField(audit.h1Tags);
+      const savedImagesData = normalizeJsonField(audit.imagesData);
+      const savedMissingAlt = normalizeJsonField(audit.missingAltImages);
+      const savedInternalLinks = normalizeJsonField(audit.internalLinksData);
+      const savedExternalLinks = normalizeJsonField(audit.externalLinksData);
+
+      const checks = [
+        { metric: "h1Count", count: audit.h1Count, actual: savedH1Tags.length },
+        { metric: "imageCount", count: audit.imageCount, actual: savedImagesData.length },
+        { metric: "missingAltCount", count: audit.missingAltCount, actual: savedMissingAlt.length },
+        { metric: "internalLinks", count: audit.internalLinks, actual: savedInternalLinks.length },
+        { metric: "externalLinks", count: audit.externalLinks, actual: savedExternalLinks.length },
+      ];
+
+      const mismatches = checks.filter((c) => c.count !== c.actual);
+      if (mismatches.length > 0) {
+        console.warn("[AUDIT INTEGRITY] Mismatches found:", mismatches);
+      } else {
+        console.log("[AUDIT INTEGRITY] All summary counts match detail array lengths");
+      }
     } catch (dbError) {
       console.error("Audit save failed:", dbError);
       return NextResponse.json(auditResult);
