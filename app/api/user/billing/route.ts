@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
-import { checkQuota, needsReset, getPlanLimit } from "@/lib/quota";
+import {
+  checkAuditQuota,
+  checkCompetitorQuota,
+  needsReset,
+  getAuditResetDays,
+} from "@/lib/quota";
 import { PLANS, PLAN_DISPLAY } from "@/lib/pricing";
 
 export async function GET() {
@@ -14,22 +19,50 @@ export async function GET() {
 
     const user = await getOrCreateUser(clerkUserId);
 
-    if (needsReset(user.lastResetDate)) {
-      user.monthlyAuditCount = 0;
-      user.lastResetDate = new Date();
+    let auditCount = user.monthlyAuditCount;
+    let auditReset = user.lastResetDate;
+    const auditResetDays = getAuditResetDays(user.plan);
+
+    if (needsReset(auditReset, auditResetDays)) {
+      auditCount = 0;
+      auditReset = new Date();
       await prisma.user.update({
         where: { id: user.id },
-        data: { monthlyAuditCount: 0, lastResetDate: user.lastResetDate },
+        data: { monthlyAuditCount: 0, lastResetDate: auditReset },
       });
     }
 
+    let compCount = user.competitorCount;
+    let compReset = user.competitorLastReset;
+
+    if (needsReset(compReset, 30)) {
+      compCount = 0;
+      compReset = new Date();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { competitorCount: 0, competitorLastReset: compReset },
+      });
+    }
+
+    const auditQuota = checkAuditQuota(user.plan, auditCount);
+    const compQuota = checkCompetitorQuota(user.plan, compCount);
+
     const planConfig = PLANS.find((p) => p.key === user.plan);
     const planDisplay = PLAN_DISPLAY[user.plan] ?? PLAN_DISPLAY.FREE;
-    const auditQuota = checkQuota(user.plan, user.monthlyAuditCount);
 
-    const [totalAudits, competitorCount] = await Promise.all([
+    const [totalAudits, competitorCount, redeemHistory] = await Promise.all([
       prisma.audit.count({ where: { userId: user.id } }),
       prisma.competitorComparison.count({ where: { userId: user.id } }),
+      prisma.redeemCode.findMany({
+        where: { usedByUserId: user.id },
+        orderBy: { usedAt: "desc" },
+        select: {
+          code: true,
+          plan: true,
+          usedAt: true,
+          expiresAt: true,
+        },
+      }),
     ]);
 
     const redeemedCode =
@@ -40,7 +73,8 @@ export async function GET() {
     const status =
       user.plan === "FREE"
         ? "Active"
-        : user.subscriptionEndsAt && new Date(user.subscriptionEndsAt) < new Date()
+        : user.subscriptionEndsAt &&
+            new Date(user.subscriptionEndsAt) < new Date()
           ? "Expired"
           : "Active";
 
@@ -54,15 +88,22 @@ export async function GET() {
       subscriptionEndsAt: user.subscriptionEndsAt?.toISOString() ?? null,
       isLifetime: user.plan === "LIFETIME",
       redeemedCode: redeemedCode ? String(redeemedCode) : null,
-      usage: {
-        auditsUsed: user.monthlyAuditCount,
-        auditsLimit: auditQuota.limit,
-        auditsRemaining: auditQuota.remaining,
-        auditsIsUnlimited: auditQuota.isUnlimited,
-        totalAudits,
-        competitorsTracked: competitorCount,
-        reportsGenerated: totalAudits,
+      audit: {
+        used: auditQuota.used,
+        limit: auditQuota.limit,
+        remaining: auditQuota.remaining,
+        isUnlimited: auditQuota.isUnlimited,
+        resetDays: auditResetDays,
       },
+      competitor: {
+        used: compQuota.used,
+        limit: compQuota.limit,
+        remaining: compQuota.remaining,
+        isUnlimited: compQuota.isUnlimited,
+      },
+      totalAudits,
+      competitorsTracked: competitorCount,
+      redeemHistory,
       paymentMethod: null,
     });
   } catch (error) {

@@ -8,20 +8,22 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  clerkId           String    @unique
-  email             String    @unique
-  name              String?
-  role              String    @default("FREE")
-  plan              String    @default("FREE")
-  monthlyAuditCount Int       @default(0)
-  lastResetDate     DateTime?
-  subscriptionEndsAt DateTime?
-  redeemedCodes     Json      @default("[]")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  audits            Audit[]
-  redeemedBy        RedeemCode[]
+  id                  String    @id @default(cuid())
+  clerkId             String    @unique
+  email               String    @unique
+  name                String?
+  role                String    @default("FREE")
+  plan                String    @default("FREE")
+  monthlyAuditCount   Int       @default(0)
+  lastResetDate       DateTime?
+  competitorCount     Int       @default(0)
+  competitorLastReset DateTime?
+  subscriptionEndsAt  DateTime?
+  redeemedCodes       Json      @default("[]")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  audits              Audit[]
+  redeemedBy          RedeemCode[]
 }
 
 model CompetitorComparison {

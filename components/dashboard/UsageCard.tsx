@@ -12,15 +12,23 @@ import {
   Infinity,
   Loader2,
   ChevronRight,
+  Globe,
+  FileText,
+  Clock,
 } from "lucide-react";
 
-interface UsageData {
-  plan: string;
+interface QuotaInfo {
   used: number;
   limit: number;
   remaining: number;
   isUnlimited: boolean;
   withinQuota: boolean;
+}
+
+interface UsageData {
+  plan: string;
+  audit: QuotaInfo;
+  competitor: QuotaInfo;
 }
 
 const planLabels: Record<string, string> = {
@@ -39,23 +47,81 @@ const planIcons: Record<string, typeof BarChart3> = {
   ENTERPRISE: Crown,
 };
 
-function getUsagePercent(used: number, limit: number, isUnlimited: boolean): number {
-  if (isUnlimited) return 0;
-  if (limit <= 0) return 100;
-  return Math.min(100, Math.round((used / limit) * 100));
+function ProgressBar({
+  used,
+  limit,
+  isUnlimited,
+  label,
+  icon: Icon,
+}: {
+  used: number;
+  limit: number;
+  isUnlimited: boolean;
+  label: string;
+  icon: typeof Zap;
+}) {
+  const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / limit) * 100));
+  const isWarning = pct >= 70 && pct < 90;
+  const isCritical = pct >= 90;
+  const barColor = isCritical
+    ? "bg-red-500"
+    : isWarning
+      ? "bg-amber-500"
+      : "bg-emerald-500";
+
+  return (
+    <div className="flex-1">
+      <div className="flex items-center gap-2 text-sm">
+        <Icon className="h-4 w-4 text-zinc-400" />
+        <span className="font-medium text-zinc-600">{label}</span>
+      </div>
+      {isUnlimited ? (
+        <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-600">
+          <Infinity className="h-4 w-4" />
+          Unlimited
+        </div>
+      ) : (
+        <div className="mt-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-semibold text-zinc-800">
+              {used} / {limit}
+            </span>
+            <span
+              className={
+                isCritical
+                  ? "font-medium text-red-600"
+                  : isWarning
+                    ? "font-medium text-amber-600"
+                    : "font-medium text-emerald-600"
+              }
+            >
+              {remaining(used, limit)} remaining
+            </span>
+          </div>
+          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className={`h-full rounded-full ${barColor}`}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function getProgressColor(pct: number): string {
-  if (pct >= 90) return "bg-red-500";
-  if (pct >= 70) return "bg-amber-500";
-  return "bg-emerald-500";
+function remaining(used: number, limit: number): number {
+  return Math.max(0, limit - used);
 }
 
-function getProgressTrackColor(pct: number): string {
-  if (pct >= 90) return "bg-red-100";
-  if (pct >= 70) return "bg-amber-100";
-  return "bg-emerald-100";
-}
+const resetLabels: Record<string, string> = {
+  FREE: "monthly",
+  STARTER: "yearly",
+  PRO: "",
+  LIFETIME: "",
+};
 
 export default function UsageCard() {
   const router = useRouter();
@@ -93,14 +159,6 @@ export default function UsageCard() {
   if (!usage) return null;
 
   const Icon = planIcons[usage.plan] || BarChart3;
-  const pct = getUsagePercent(usage.used, usage.limit, usage.isUnlimited);
-  const isWarning = pct >= 70 && pct < 90;
-  const isCritical = pct >= 90;
-  const borderColor = isCritical
-    ? "border-red-200"
-    : isWarning
-      ? "border-amber-200"
-      : "border-zinc-200";
 
   const planBgColor =
     usage.plan === "FREE"
@@ -129,7 +187,7 @@ export default function UsageCard() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`rounded-2xl border bg-white p-5 transition-all duration-300 hover:shadow-md ${borderColor}`}
+      className="rounded-2xl border border-zinc-200 bg-white p-5 transition-all duration-300 hover:shadow-md"
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -156,54 +214,21 @@ export default function UsageCard() {
         )}
       </div>
 
-      <div className="mt-4">
-        {usage.isUnlimited ? (
-          <div className="flex items-center gap-2 rounded-xl bg-zinc-50 px-4 py-3">
-            <Infinity className="h-5 w-5 text-zinc-400" />
-            <span className="text-sm font-medium text-zinc-700">
-              Unlimited audits
-            </span>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-zinc-700">
-                {usage.used} / {usage.limit} audits used
-              </span>
-              <span
-                className={`font-medium ${
-                  isCritical
-                    ? "text-red-600"
-                    : isWarning
-                      ? "text-amber-600"
-                      : "text-emerald-600"
-                }`}
-              >
-                {usage.remaining} remaining
-              </span>
-            </div>
-            <div
-              className={`mt-2 h-2 w-full overflow-hidden rounded-full ${getProgressTrackColor(pct)}`}
-            >
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`h-full rounded-full ${getProgressColor(pct)}`}
-              />
-            </div>
-            {isCritical && (
-              <p className="mt-2 text-xs text-red-600">
-                You have reached your monthly audit limit.
-              </p>
-            )}
-            {isWarning && !isCritical && (
-              <p className="mt-2 text-xs text-amber-600">
-                You are running low on monthly audits.
-              </p>
-            )}
-          </div>
-        )}
+      <div className="mt-5 flex flex-col gap-6 sm:flex-row">
+        <ProgressBar
+          used={usage.audit.used}
+          limit={usage.audit.limit}
+          isUnlimited={usage.audit.isUnlimited}
+          label={`Audits (${resetLabels[usage.plan] || "unlimited"})`}
+          icon={FileText}
+        />
+        <ProgressBar
+          used={usage.competitor.used}
+          limit={usage.competitor.limit}
+          isUnlimited={usage.competitor.isUnlimited}
+          label="Competitor analyses (monthly)"
+          icon={Globe}
+        />
       </div>
     </motion.div>
   );

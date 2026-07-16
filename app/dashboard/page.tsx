@@ -31,6 +31,9 @@ interface DashboardData {
   competitorsTracked: number;
   reportsGenerated: number;
   issuesFound: number;
+  plan: string;
+  subscriptionEndsAt: string | null;
+  createdAt: string;
   chartData: { month: string; score: number }[];
   recentActivity: { text: string; time: string }[];
   upcomingTasks: { text: string; completed: boolean }[];

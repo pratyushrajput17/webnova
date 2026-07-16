@@ -4,6 +4,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
 import { validateUrl, normalizeUrl, analyzeWebsite } from "@/lib/audit";
+import { checkCompetitorQuota, needsReset } from "@/lib/quota";
 
 interface ComparisonMetric {
   label: string;
@@ -106,6 +107,32 @@ export async function POST(request: NextRequest) {
       user = await getOrCreateUser(clerkUserId);
     } catch {
       return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+    }
+
+    let compCount = user.competitorCount;
+    let compReset = user.competitorLastReset;
+
+    if (needsReset(compReset, 30)) {
+      compCount = 0;
+      compReset = new Date();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { competitorCount: 0, competitorLastReset: compReset },
+      });
+    }
+
+    const compQuota = checkCompetitorQuota(user.plan, compCount);
+    if (!compQuota.withinQuota) {
+      return NextResponse.json(
+        {
+          error: "You have reached your monthly competitor analysis limit.",
+          code: "COMPETITOR_QUOTA_EXCEEDED",
+          limit: compQuota.limit,
+          used: compQuota.used,
+          plan: user.plan,
+        },
+        { status: 403 }
+      );
     }
 
     let yourResult;
@@ -228,6 +255,11 @@ export async function POST(request: NextRequest) {
         comparison: metrics as unknown as Prisma.InputJsonValue,
         summary,
       },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { competitorCount: { increment: 1 } },
     });
 
     return NextResponse.json(comparisonData);

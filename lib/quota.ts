@@ -1,4 +1,12 @@
-export const PLAN_LIMITS: Record<string, number> = {
+export const AUDIT_LIMITS: Record<string, number> = {
+  FREE: 3,
+  STARTER: 300,
+  PRO: -1,
+  LIFETIME: -1,
+  ENTERPRISE: -1,
+};
+
+export const COMPETITOR_LIMITS: Record<string, number> = {
   FREE: 3,
   STARTER: 25,
   PRO: -1,
@@ -7,6 +15,7 @@ export const PLAN_LIMITS: Record<string, number> = {
 };
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 export interface QuotaResult {
   withinQuota: boolean;
@@ -16,31 +25,60 @@ export interface QuotaResult {
   isUnlimited: boolean;
 }
 
-export function getPlanLimit(plan: string): number {
-  return PLAN_LIMITS[plan] ?? 3;
+export function getAuditLimit(plan: string): number {
+  return AUDIT_LIMITS[plan] ?? 3;
 }
 
-export function isUnlimited(plan: string): boolean {
-  return PLAN_LIMITS[plan] === -1;
+export function getCompetitorLimit(plan: string): number {
+  return COMPETITOR_LIMITS[plan] ?? 3;
 }
 
-export function needsReset(lastResetDate: Date | null): boolean {
+export function isUnlimited(limit: number): boolean {
+  return limit === -1;
+}
+
+export function getAuditResetDays(plan: string): number {
+  if (plan === "STARTER") return 365;
+  return 30;
+}
+
+export function needsReset(
+  lastResetDate: Date | null,
+  periodDays = 30
+): boolean {
   if (!lastResetDate) return true;
-  return Date.now() - lastResetDate.getTime() >= THIRTY_DAYS_MS;
+  const periodMs = periodDays * 24 * 60 * 60 * 1000;
+  return Date.now() - lastResetDate.getTime() >= periodMs;
 }
 
-export function checkQuota(
+export function checkAuditQuota(
   plan: string,
-  monthlyAuditCount: number,
+  count: number
 ): QuotaResult {
-  const limit = getPlanLimit(plan);
+  const limit = getAuditLimit(plan);
   const unlimited = limit === -1;
 
   return {
-    withinQuota: unlimited || monthlyAuditCount < limit,
+    withinQuota: unlimited || count < limit,
     limit,
-    used: monthlyAuditCount,
-    remaining: unlimited ? -1 : Math.max(0, limit - monthlyAuditCount),
+    used: count,
+    remaining: unlimited ? -1 : Math.max(0, limit - count),
+    isUnlimited: unlimited,
+  };
+}
+
+export function checkCompetitorQuota(
+  plan: string,
+  count: number
+): QuotaResult {
+  const limit = getCompetitorLimit(plan);
+  const unlimited = limit === -1;
+
+  return {
+    withinQuota: unlimited || count < limit,
+    limit,
+    used: count,
+    remaining: unlimited ? -1 : Math.max(0, limit - count),
     isUnlimited: unlimited,
   };
 }

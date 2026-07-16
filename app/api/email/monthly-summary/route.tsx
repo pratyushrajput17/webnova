@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { checkQuota } from "@/lib/quota";
+import { checkAuditQuota } from "@/lib/quota";
 import type { ReactElement } from "react";
 
 /* eslint-disable react-hooks/error-boundaries */
@@ -42,7 +42,7 @@ export async function POST() {
         where: { userId: user.id },
       });
 
-      const quota = checkQuota(user.plan, user.monthlyAuditCount);
+      const quota = checkAuditQuota(user.plan, user.monthlyAuditCount);
 
       const [mod, Email] = await Promise.all([
         import("@/lib/email"),

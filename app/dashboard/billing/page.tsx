@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import {
   CreditCard,
   CheckCircle2,
@@ -19,8 +18,25 @@ import {
   Calendar,
   Hash,
   ExternalLink,
+  Ticket,
+  History,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+interface QuotaInfo {
+  used: number;
+  limit: number;
+  remaining: number;
+  isUnlimited: boolean;
+  resetDays: number;
+}
+
+interface RedeemEntry {
+  code: string;
+  plan: string;
+  usedAt: string;
+  expiresAt: string | null;
+}
 
 interface BillingData {
   plan: string;
@@ -32,15 +48,11 @@ interface BillingData {
   subscriptionEndsAt: string | null;
   isLifetime: boolean;
   redeemedCode: string | null;
-  usage: {
-    auditsUsed: number;
-    auditsLimit: number;
-    auditsRemaining: number;
-    auditsIsUnlimited: boolean;
-    totalAudits: number;
-    competitorsTracked: number;
-    reportsGenerated: number;
-  };
+  audit: QuotaInfo;
+  competitor: QuotaInfo;
+  totalAudits: number;
+  competitorsTracked: number;
+  redeemHistory: RedeemEntry[];
   paymentMethod: null;
 }
 
@@ -53,7 +65,7 @@ const sectionVariants = {
   }),
 };
 
-function UsageStat({
+function QuotaBar({
   label,
   used,
   limit,
@@ -66,62 +78,45 @@ function UsageStat({
   isUnlimited: boolean;
   icon: typeof Zap;
 }) {
-  const percentage = isUnlimited
-    ? 0
-    : limit > 0
-      ? Math.round((used / limit) * 100)
-      : 0;
+  const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / limit) * 100));
   const barColor =
-    percentage >= 80
-      ? "bg-red-500"
-      : percentage >= 60
-        ? "bg-amber-500"
-        : "bg-emerald-500";
+    pct >= 80 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500";
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
-            <Icon className="h-5 w-5 text-zinc-600" />
-          </div>
-          <div>
-            <p className="text-sm text-zinc-500">{label}</p>
-            <p className="text-2xl font-bold">
-              {used}
-              {!isUnlimited && limit > 0 && (
-                <span className="text-base font-normal text-zinc-400">
-                  {" "}
-                  / {limit}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
+    <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4">
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-zinc-400" />
+        <span className="text-sm font-medium text-zinc-600">{label}</span>
       </div>
       {isUnlimited ? (
-        <div className="mt-4 flex items-center gap-1.5 text-sm text-emerald-600">
+        <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-600">
           <Infinity className="h-4 w-4" />
           Unlimited
         </div>
       ) : (
-        <div className="mt-4 space-y-1.5">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+        <div className="mt-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-semibold text-zinc-800">{used} used</span>
+            <span className="font-medium text-zinc-500">
+              {remaining(used, limit)} remaining
+            </span>
+          </div>
+          <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(percentage, 100)}%` }}
+              animate={{ width: `${pct}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
               className={`h-full rounded-full ${barColor}`}
             />
-          </div>
-          <div className="flex justify-between text-xs text-zinc-400">
-            <span>{used} used</span>
-            <span>{Math.max(0, limit - used)} remaining</span>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function remaining(used: number, limit: number): number {
+  return Math.max(0, limit - used);
 }
 
 function formatDate(dateStr: string): string {
@@ -134,7 +129,6 @@ function formatDate(dateStr: string): string {
 
 export default function BillingPage() {
   const router = useRouter();
-  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +148,6 @@ export default function BillingPage() {
   }, []);
 
   const handleUpgrade = () => {
-    if (!clerkLoaded) return;
     const currentPlan = data?.plan || "FREE";
     router.push(`/pricing/checkout?plan=${currentPlan}`);
   };
@@ -170,33 +163,9 @@ export default function BillingPage() {
         <p className="mt-2 text-zinc-600">
           Manage your subscription and billing information.
         </p>
-        <div className="mt-8 grid animate-pulse gap-8 lg:grid-cols-3">
-          <div className="h-72 rounded-2xl border border-zinc-200 bg-white p-8 lg:col-span-2">
-            <div className="h-6 w-48 rounded bg-zinc-100" />
-            <div className="mt-6 h-4 w-24 rounded bg-zinc-100" />
-            <div className="mt-2 h-8 w-40 rounded bg-zinc-100" />
-            <div className="my-6 h-px bg-zinc-200" />
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div>
-                <div className="h-4 w-20 rounded bg-zinc-100" />
-                <div className="mt-2 h-6 w-28 rounded bg-zinc-100" />
-              </div>
-              <div>
-                <div className="h-4 w-28 rounded bg-zinc-100" />
-                <div className="mt-2 h-6 w-36 rounded bg-zinc-100" />
-              </div>
-            </div>
-          </div>
-          <div className="h-72 rounded-2xl border border-zinc-200 bg-white p-8">
-            <div className="h-6 w-40 rounded bg-zinc-100" />
-            <div className="mt-4 h-4 w-56 rounded bg-zinc-100" />
-            <div className="my-6 h-px bg-zinc-200" />
-            <div className="h-4 w-36 rounded bg-zinc-100" />
-            <div className="mt-6 h-10 w-full rounded-xl bg-zinc-100" />
-          </div>
-        </div>
-        <div className="mt-8 h-48 rounded-2xl border border-zinc-200 bg-white p-8">
-          <div className="h-6 w-40 rounded bg-zinc-100" />
+        <div className="mt-8 space-y-8">
+          <div className="h-72 animate-pulse rounded-2xl border border-zinc-200 bg-white p-8" />
+          <div className="h-48 animate-pulse rounded-2xl border border-zinc-200 bg-white p-8" />
         </div>
       </motion.div>
     );
@@ -221,8 +190,6 @@ export default function BillingPage() {
       </motion.div>
     );
   }
-
-  const { usage } = data;
 
   return (
     <motion.div
@@ -280,12 +247,10 @@ export default function BillingPage() {
                 {data.isLifetime ? "Expiration" : "Next Billing Date"}
               </p>
               <p className="mt-1 text-lg font-semibold">
-                {data.isLifetime
-                  ? data.subscriptionEndsAt
-                    ? `Expires in 5 years`
-                    : "Lifetime access"
-                  : data.subscriptionEndsAt
-                    ? formatDate(data.subscriptionEndsAt)
+                {data.subscriptionEndsAt
+                  ? formatDate(data.subscriptionEndsAt)
+                  : data.isLifetime
+                    ? "Lifetime access"
                     : "—"}
               </p>
             </div>
@@ -299,9 +264,7 @@ export default function BillingPage() {
             </div>
             <div>
               <p className="text-sm text-zinc-500">Reports Generated</p>
-              <p className="mt-1 text-lg font-semibold">
-                {usage.reportsGenerated}
-              </p>
+              <p className="mt-1 text-lg font-semibold">{data.totalAudits}</p>
             </div>
           </div>
 
@@ -333,18 +296,7 @@ export default function BillingPage() {
               : `You are on the ${data.planName} plan.`}
           </p>
           <Separator className="my-6" />
-          {data.paymentMethod === null ? (
-            <>
-              <p className="text-sm text-zinc-500">No payment method added</p>
-              <p className="mt-1 text-sm font-medium">
-                {data.plan === "FREE"
-                  ? "Upgrade to unlock premium features"
-                  : "Contact sales to update payment method"}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-zinc-500">Payment method on file</p>
-          )}
+          <p className="text-sm text-zinc-500">No payment method added</p>
           {data.plan !== "LIFETIME" && (
             <button
               onClick={handleUpgrade}
@@ -363,31 +315,62 @@ export default function BillingPage() {
         animate="visible"
         className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8"
       >
-        <h2 className="text-xl font-semibold">Usage Statistics</h2>
-        <div className="mt-6 grid gap-8 sm:grid-cols-3">
-          <UsageStat
-            label="Audits Used (This Month)"
-            used={usage.auditsUsed}
-            limit={usage.auditsLimit}
-            isUnlimited={usage.auditsIsUnlimited}
-            icon={Zap}
-          />
-          <UsageStat
-            label="Competitors Tracked"
-            used={usage.competitorsTracked}
-            limit={-1}
-            isUnlimited={true}
-            icon={Globe}
-          />
-          <UsageStat
-            label="Reports Generated"
-            used={usage.reportsGenerated}
-            limit={-1}
-            isUnlimited={true}
+        <h2 className="text-xl font-semibold">Usage & Quota</h2>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <QuotaBar
+            label={`Audits (${data.audit.resetDays >= 365 ? "yearly" : "monthly"})`}
+            used={data.audit.used}
+            limit={data.audit.limit}
+            isUnlimited={data.audit.isUnlimited}
             icon={FileText}
+          />
+          <QuotaBar
+            label="Competitor analyses (monthly)"
+            used={data.competitor.used}
+            limit={data.competitor.limit}
+            isUnlimited={data.competitor.isUnlimited}
+            icon={Globe}
           />
         </div>
       </motion.div>
+
+      {data.redeemHistory.length > 0 && (
+        <motion.div
+          custom={3}
+          variants={sectionVariants}
+          initial="hidden"
+          animate="visible"
+          className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8"
+        >
+          <h2 className="text-xl font-semibold">Redeem History</h2>
+          <div className="mt-6 space-y-3">
+            {data.redeemHistory.map((entry, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 px-4 py-3"
+              >
+                <div className="flex items-center gap-3">
+                  <Ticket className="h-4 w-4 text-zinc-400" />
+                  <div>
+                    <p className="text-sm font-medium text-zinc-800">
+                      {entry.code}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {entry.plan} plan
+                      {entry.usedAt && ` — ${formatDate(entry.usedAt)}`}
+                    </p>
+                  </div>
+                </div>
+                {entry.expiresAt && (
+                  <span className="text-xs text-zinc-400">
+                    Expires {formatDate(entry.expiresAt)}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

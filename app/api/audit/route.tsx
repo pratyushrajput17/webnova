@@ -8,7 +8,7 @@ import {
   normalizeUrl,
   analyzeWebsite,
 } from "@/lib/audit";
-import { checkQuota, needsReset } from "@/lib/quota";
+import { checkAuditQuota, needsReset, getAuditResetDays } from "@/lib/quota";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import type { ReactElement } from "react";
 
@@ -48,8 +48,9 @@ export async function POST(request: NextRequest) {
 
     let currentCount = user.monthlyAuditCount;
     let currentReset = user.lastResetDate;
+    const resetDays = getAuditResetDays(user.plan);
 
-    if (needsReset(currentReset)) {
+    if (needsReset(currentReset, resetDays)) {
       currentCount = 0;
       currentReset = new Date();
       await prisma.user.update({
@@ -58,11 +59,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const quota = checkQuota(user.plan, currentCount);
+    const quota = checkAuditQuota(user.plan, currentCount);
     if (!quota.withinQuota) {
+      const periodLabel = resetDays >= 365 ? "yearly" : "monthly";
       return NextResponse.json(
         {
-          error: "You have reached your monthly audit limit.",
+          error: `You have reached your ${periodLabel} audit limit.`,
           code: "QUOTA_EXCEEDED",
           limit: quota.limit,
           used: quota.used,

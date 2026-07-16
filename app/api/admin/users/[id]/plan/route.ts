@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 
+const VALID_PLANS = ["FREE", "STARTER", "PRO", "LIFETIME", "ENTERPRISE"];
+
+function getSubscriptionEndsAt(plan: string): Date | null {
+  if (plan === "FREE") return null;
+  const now = new Date();
+  if (plan === "LIFETIME") {
+    const d = new Date(now);
+    d.setFullYear(d.getFullYear() + 5);
+    return d;
+  }
+  const d = new Date(now);
+  d.setFullYear(d.getFullYear() + 1);
+  return d;
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,10 +38,12 @@ export async function PATCH(
     }
 
     const plan = body.plan?.toUpperCase();
-    const validPlans = ["FREE", "STARTER", "PRO", "LIFETIME", "ENTERPRISE"];
-    if (!plan || !validPlans.includes(plan)) {
+    if (!plan || !VALID_PLANS.includes(plan)) {
       return NextResponse.json(
-        { error: "Invalid plan. Must be FREE, STARTER, PRO, LIFETIME, or ENTERPRISE." },
+        {
+          error:
+            "Invalid plan. Must be FREE, STARTER, PRO, LIFETIME, or ENTERPRISE.",
+        },
         { status: 400 }
       );
     }
@@ -38,12 +55,20 @@ export async function PATCH(
 
     const updated = await prisma.user.update({
       where: { id },
-      data: { plan },
+      data: {
+        plan,
+        subscriptionEndsAt: getSubscriptionEndsAt(plan),
+        monthlyAuditCount: 0,
+        lastResetDate: new Date(),
+        competitorCount: 0,
+        competitorLastReset: new Date(),
+      },
       select: {
         id: true,
         email: true,
         name: true,
         plan: true,
+        subscriptionEndsAt: true,
         updatedAt: true,
       },
     });
