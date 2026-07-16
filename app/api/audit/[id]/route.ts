@@ -49,6 +49,8 @@ export async function GET(
     const result = {
       ...audit,
       h1Tags: normalizeJsonField(audit.h1Tags),
+      h2Tags: normalizeJsonField(audit.h2Tags),
+      h3Tags: normalizeJsonField(audit.h3Tags),
       imagesData: normalizeJsonField(audit.imagesData),
       missingAltImages: normalizeJsonField(audit.missingAltImages),
       internalLinksData: normalizeJsonField(audit.internalLinksData),

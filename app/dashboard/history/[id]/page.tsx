@@ -51,6 +51,9 @@ interface AuditDetail {
   accessibilityScore: number;
   h1Count: number;
   h1Tags?: string[];
+  h2Tags?: string[];
+  h3Tags?: string[];
+  canonicalUrl?: string;
   imageCount: number;
   missingAltCount: number;
   imagesData?: ImageItem[];
@@ -558,6 +561,9 @@ export default function AuditDetailPage() {
       <AuditDetailSections
         data={{
           h1Tags: audit.h1Tags,
+          h2Tags: audit.h2Tags,
+          h3Tags: audit.h3Tags,
+          canonicalUrl: audit.canonicalUrl,
           internalLinksData: audit.internalLinksData,
           externalLinksData: audit.externalLinksData,
           imagesData: audit.imagesData,

@@ -28,6 +28,9 @@ interface ImageItem {
 
 interface AuditSectionsData {
   h1Tags?: string[];
+  h2Tags?: string[];
+  h3Tags?: string[];
+  canonicalUrl?: string;
   internalLinksData?: LinkItem[];
   externalLinksData?: LinkItem[];
   imagesData?: ImageItem[];
@@ -69,6 +72,8 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
 
   const badges = [
     { id: "h1", label: "H1 Tags", arr: data.h1Tags, count: data.h1Count ?? 0, icon: Hash, color: "bg-blue-50 text-blue-700" },
+    { id: "h2", label: "H2 Tags", arr: data.h2Tags, count: data.h2Tags?.length ?? 0, icon: Hash, color: "bg-indigo-50 text-indigo-700" },
+    { id: "h3", label: "H3 Tags", arr: data.h3Tags, count: data.h3Tags?.length ?? 0, icon: Hash, color: "bg-sky-50 text-sky-700" },
     { id: "internal", label: "Internal Links", arr: data.internalLinksData, count: data.internalLinks ?? 0, icon: Link, color: "bg-emerald-50 text-emerald-700" },
     { id: "external", label: "External Links", arr: data.externalLinksData, count: data.externalLinks ?? 0, icon: ExternalLink, color: "bg-amber-50 text-amber-700" },
     { id: "images", label: "Images", arr: data.imagesData, count: data.imageCount ?? 0, icon: Image, color: "bg-violet-50 text-violet-700" },
@@ -136,9 +141,11 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
                     <div className="border-t border-zinc-100 px-5 py-4">
                       {badge.id === "h1" && (
                         hasDetailData(data.h1Tags)
-                          ? renderH1Tags(data.h1Tags)
-                          : (data.h1Count ?? 0) > 0 ? showUnavailable(data.h1Count ?? 0) : renderH1Tags([])
+                          ? renderHTags(data.h1Tags!, "H1")
+                          : (data.h1Count ?? 0) > 0 ? showUnavailable(data.h1Count ?? 0) : renderHTags([], "H1")
                       )}
+                      {badge.id === "h2" && renderHTags(data.h2Tags ?? [], "H2")}
+                      {badge.id === "h3" && renderHTags(data.h3Tags ?? [], "H3")}
                       {badge.id === "internal" && (
                         hasDetailData(data.internalLinksData)
                           ? renderLinks(data.internalLinksData, true)
@@ -172,12 +179,11 @@ export default function AuditDetailSections({ data }: { data: AuditSectionsData 
   );
 }
 
-function renderH1Tags(tags?: string[]) {
+function renderHTags(tags: string[], tagName: string) {
   if (!tags || tags.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        No H1 tags found on this page.
+      <div className="flex items-center gap-2 rounded-lg bg-zinc-50 px-4 py-3 text-sm text-zinc-500">
+        No {tagName} tags found on this page.
       </div>
     );
   }
@@ -192,7 +198,7 @@ function renderH1Tags(tags?: string[]) {
           {tag}
         </div>
       ))}
-      {tags.length > 1 && (
+      {tagName === "H1" && tags.length > 1 && (
         <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2 text-xs text-amber-700">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           Multiple H1 tags found. Best practice is to use one H1 per page.
@@ -276,9 +282,13 @@ function renderImages(images?: ImageItem[]) {
             )}
           </div>
           <div className="space-y-1">
-            <p className="truncate text-xs text-zinc-500" title={img.src}>
-              {img.src || "—"}
-            </p>
+            {img.src ? (
+              <a href={img.src} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-zinc-500 transition-colors hover:text-blue-600" title={img.src}>
+                {img.src}
+              </a>
+            ) : (
+              <p className="truncate text-xs text-zinc-500">—</p>
+            )}
             <div className="flex items-center gap-1.5">
               {img.hasAlt ? (
                 <>
@@ -339,9 +349,13 @@ function renderMissingAlt(images?: { src: string }[]) {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-zinc-500" title={img.src}>
-                {img.src || "No source URL"}
-              </p>
+              {img.src ? (
+                <a href={img.src} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-zinc-500 transition-colors hover:text-blue-600" title={img.src}>
+                  {img.src}
+                </a>
+              ) : (
+                <p className="truncate text-xs text-zinc-500">No source URL</p>
+              )}
               <span className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
                 <ImageOff className="h-3 w-3" />
                 Missing alt
@@ -362,6 +376,20 @@ function renderMetaInfo(data: AuditSectionsData) {
 
   return (
     <div className="space-y-4">
+      {data.canonicalUrl && (
+        <div>
+          <span className="text-sm font-medium text-zinc-700">Canonical URL</span>
+          <a
+            href={data.canonicalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 flex items-center gap-1.5 truncate text-sm text-blue-600 transition-colors hover:text-blue-800"
+          >
+            {data.canonicalUrl}
+            <ExternalLink className="h-3 w-3 shrink-0" />
+          </a>
+        </div>
+      )}
       <div>
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-zinc-700">

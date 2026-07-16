@@ -5,18 +5,6 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Loader2, X, Zap, Crown, Sparkles } from "lucide-react";
-import AuditResults from "./AuditResults";
-
-interface AuditResult {
-  pageTitle: string;
-  metaDescription: string;
-  h1Count: number;
-  imageCount: number;
-  missingAltCount: number;
-  internalLinks: number;
-  externalLinks: number;
-  seoScore: number;
-}
 
 interface QuotaExceededData {
   error: string;
@@ -31,7 +19,6 @@ export default function WebsiteAnalyzer() {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AuditResult | null>(null);
   const [quotaModal, setQuotaModal] = useState<QuotaExceededData | null>(null);
 
   const validateInput = (input: string): string | null => {
@@ -59,7 +46,6 @@ export default function WebsiteAnalyzer() {
 
   const handleAnalyze = async () => {
     setError("");
-    setResult(null);
     setQuotaModal(null);
 
     const validationError = validateInput(url);
@@ -71,10 +57,10 @@ export default function WebsiteAnalyzer() {
     setLoading(true);
 
     try {
-      const response = await axios.post<AuditResult>("/api/audit", {
+      const response = await axios.post<{ id: string }>("/api/audit", {
         url: url.trim(),
       });
-      setResult(response.data);
+      router.push(`/dashboard/history/${response.data.id}`);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data) {
         const data = err.response.data;
@@ -140,12 +126,6 @@ export default function WebsiteAnalyzer() {
           </div>
         )}
       </div>
-
-      {result && (
-        <div className="mt-8">
-          <AuditResults result={result} url={url.trim()} />
-        </div>
-      )}
 
       <AnimatePresence>
         {quotaModal && (

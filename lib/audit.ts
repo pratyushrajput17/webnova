@@ -17,6 +17,11 @@ export interface AuditResult {
   metaDescription: string;
   h1Count: number;
   h1Tags: string[];
+  h2Count: number;
+  h2Tags: string[];
+  h3Count: number;
+  h3Tags: string[];
+  canonicalUrl: string;
   imageCount: number;
   missingAltCount: number;
   internalLinks: number;
@@ -217,6 +222,23 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
   const h1Count = h1Tags.length;
   console.log("[EXTRACT] h1Tags:", JSON.stringify(h1Tags), "| h1Count:", h1Count);
 
+  const h2Tags: string[] = [];
+  $("h2").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text) h2Tags.push(text);
+  });
+  const h2Count = h2Tags.length;
+
+  const h3Tags: string[] = [];
+  $("h3").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text) h3Tags.push(text);
+  });
+  const h3Count = h3Tags.length;
+
+  const canonicalUrl =
+    $("link[rel='canonical']").attr("href")?.trim() || "";
+
   const imagesData: ImageItem[] = [];
   const missingAltImages: { src: string }[] = [];
   const imageElements = $("img");
@@ -305,6 +327,11 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     metaDescription,
     h1Count,
     h1Tags,
+    h2Count,
+    h2Tags,
+    h3Count,
+    h3Tags,
+    canonicalUrl,
     imageCount,
     missingAltCount,
     imagesData,
