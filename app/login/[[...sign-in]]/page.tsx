@@ -1,9 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
 
-export default function SignInPage() {
+export default async function SignInPage(props: {
+  searchParams: Promise<{ redirect_url?: string }>;
+}) {
+  const { redirect_url } = await props.searchParams;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12">
       <SignIn
+        fallbackRedirectUrl={redirect_url || "/dashboard"}
         appearance={{
           elements: {
             card: "rounded-2xl border border-zinc-200 bg-white shadow-sm",
