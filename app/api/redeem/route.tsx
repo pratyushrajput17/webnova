@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
 import { parseCode, seedTestCodes } from "@/lib/codes";
+import { logUsage } from "@/lib/usage";
 import type { ReactElement } from "react";
 
 async function ensureTestCodes() {
@@ -18,6 +19,17 @@ async function ensureTestCodes() {
   }));
 
   await prisma.redeemCode.createMany({ data: testCodes });
+}
+
+function getSubscriptionEndsAt(plan: string, durationDays: number): Date | null {
+  if (plan === "FREE") return null;
+  const d = new Date();
+  if (plan === "LIFETIME") {
+    d.setFullYear(d.getFullYear() + 5);
+    return d;
+  }
+  d.setDate(d.getDate() + durationDays);
+  return d;
 }
 
 export async function POST(request: NextRequest) {
@@ -87,15 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
-    const subscriptionEndsAt = new Date();
-    subscriptionEndsAt.setDate(
-      subscriptionEndsAt.getDate() + redeemCode.duration
-    );
-
-    const redeemedCodes: string[] = [
-      ...((user.redeemedCodes as string[]) ?? []),
-      rawCode,
-    ];
+    const subscriptionEndsAt = getSubscriptionEndsAt(redeemCode.plan, redeemCode.duration);
 
     await prisma.$transaction([
       prisma.redeemCode.update({
@@ -111,8 +115,30 @@ export async function POST(request: NextRequest) {
         data: {
           plan: redeemCode.plan,
           monthlyAuditCount: 0,
+          lastResetDate: new Date(),
+          competitorCount: 0,
+          competitorLastReset: new Date(),
           subscriptionEndsAt,
-          redeemedCodes,
+        },
+      }),
+      prisma.userSubscription.create({
+        data: {
+          userId: user.id,
+          plan: redeemCode.plan,
+          status: "active",
+          startsAt: new Date(),
+          endsAt: subscriptionEndsAt,
+          isLifetime: redeemCode.plan === "LIFETIME",
+        },
+      }),
+      prisma.redeemHistory.create({
+        data: {
+          userId: user.id,
+          code: rawCode,
+          plan: redeemCode.plan,
+          usedAt: new Date(),
+          expiresAt: subscriptionEndsAt,
+          codeId: redeemCode.id,
         },
       }),
     ]);
@@ -142,7 +168,7 @@ export async function POST(request: NextRequest) {
                 name={user.name ?? ""}
                 plan={redeemCode.plan}
                 duration={redeemCode.duration}
-                subscriptionEndsAt={subscriptionEndsAt.toISOString()}
+                subscriptionEndsAt={subscriptionEndsAt?.toISOString() ?? ""}
               />
             ) as ReactElement,
           });

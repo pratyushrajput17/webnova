@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
-import { getUserUsage } from "@/lib/usage";
+import { getUserUsage, getRemainingAudits, getRemainingCompetitors } from "@/lib/usage";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -18,7 +18,7 @@ export async function GET() {
 
     const user = await getOrCreateUser(clerkUserId);
 
-    const [audits, usage] = await Promise.all([
+    const [audits, usage, auditRemaining, compRemaining] = await Promise.all([
       prisma.audit.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
@@ -27,11 +27,12 @@ export async function GET() {
           id: true,
           websiteUrl: true,
           seoScore: true,
-          missingAltCount: true,
           createdAt: true,
         },
       }),
       getUserUsage(user.id),
+      getRemainingAudits(user.id),
+      getRemainingCompetitors(user.id),
     ]);
 
     const totalAudits = audits.length;
@@ -100,6 +101,11 @@ export async function GET() {
       auditsThisMonth: usage.auditsThisMonth,
       averageSeoScore,
       reportsGenerated: usage.reportsGenerated,
+      competitorAnalyses: usage.competitorAnalysesUsed,
+      auditRemaining: auditRemaining.remaining,
+      auditLimit: auditRemaining.limit,
+      competitorRemaining: compRemaining.remaining,
+      competitorLimit: compRemaining.limit,
       plan: user.plan,
       subscriptionEndsAt: user.subscriptionEndsAt?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
@@ -116,6 +122,11 @@ export async function GET() {
         auditsThisMonth: 0,
         averageSeoScore: 0,
         reportsGenerated: 0,
+        competitorAnalyses: 0,
+        auditRemaining: 0,
+        auditLimit: 0,
+        competitorRemaining: 0,
+        competitorLimit: 0,
         chartData: [],
         recentAudits: [],
         recentActivity: [],

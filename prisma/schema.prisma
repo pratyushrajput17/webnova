@@ -19,11 +19,60 @@ model User {
   competitorCount     Int       @default(0)
   competitorLastReset DateTime?
   subscriptionEndsAt  DateTime?
-  redeemedCodes       Json      @default("[]")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   audits              Audit[]
   redeemedBy          RedeemCode[]
+  usageHistory        UsageHistory[]
+  subscriptions       UserSubscription[]
+  redeemHistory       RedeemHistory[]
+}
+
+model UsageHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  actionType String
+  websiteUrl String?
+  resultData Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, actionType, createdAt])
+}
+
+model UserSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  plan       String
+  status     String    @default("active")
+  startsAt   DateTime  @default(now())
+  endsAt     DateTime?
+  isLifetime Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model RedeemHistory {
+  id        String    @id @default(cuid())
+  userId    String
+  code      String
+  plan      String
+  usedAt    DateTime  @default(now())
+  expiresAt DateTime?
+
+  user   User       @relation(fields: [userId], references: [id])
+  redeem RedeemCode @relation(fields: [codeId], references: [id])
+  codeId String
+
+  @@index([userId])
 }
 
 model CompetitorComparison {
@@ -51,6 +100,7 @@ model RedeemCode {
   usedAt       DateTime?
   expiresAt    DateTime?
   createdAt    DateTime  @default(now())
+  redeemHistory RedeemHistory[]
 
   @@index([plan])
   @@index([isUsed])

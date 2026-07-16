@@ -53,15 +53,18 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
+    const subscriptionEndsAt = getSubscriptionEndsAt(plan);
+    const now = new Date();
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
         plan,
-        subscriptionEndsAt: getSubscriptionEndsAt(plan),
+        subscriptionEndsAt,
         monthlyAuditCount: 0,
-        lastResetDate: new Date(),
+        lastResetDate: now,
         competitorCount: 0,
-        competitorLastReset: new Date(),
+        competitorLastReset: now,
       },
       select: {
         id: true,
@@ -70,6 +73,17 @@ export async function PATCH(
         plan: true,
         subscriptionEndsAt: true,
         updatedAt: true,
+      },
+    });
+
+    await prisma.userSubscription.create({
+      data: {
+        userId: id,
+        plan,
+        status: "active",
+        startsAt: now,
+        endsAt: subscriptionEndsAt,
+        isLifetime: plan === "LIFETIME",
       },
     });
 

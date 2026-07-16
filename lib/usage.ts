@@ -5,6 +5,7 @@ import {
   getAuditResetDays,
   needsReset,
   checkAuditQuota,
+  checkCompetitorQuota,
 } from "@/lib/quota";
 
 export interface UserUsage {
@@ -16,6 +17,12 @@ export interface UserUsage {
 }
 
 export interface RemainingAudits {
+  remaining: number;
+  limit: number;
+  isUnlimited: boolean;
+}
+
+export interface RemainingCompetitors {
   remaining: number;
   limit: number;
   isUnlimited: boolean;
@@ -77,10 +84,49 @@ export async function getRemainingAudits(
   };
 }
 
+export async function getRemainingCompetitors(
+  userId: string
+): Promise<RemainingCompetitors> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    return { remaining: 0, limit: 0, isUnlimited: false };
+  }
+
+  let compCount = user.competitorCount;
+  let compReset = user.competitorLastReset;
+
+  if (needsReset(compReset, 30)) {
+    compCount = 0;
+  }
+
+  const quota = checkCompetitorQuota(user.plan, compCount);
+  return {
+    remaining: quota.remaining,
+    limit: quota.limit,
+    isUnlimited: quota.isUnlimited,
+  };
+}
+
 export function getPlanLimits(plan: string): PlanLimits {
   return {
     auditLimit: getAuditLimit(plan),
     competitorLimit: getCompetitorLimit(plan),
     auditResetDays: getAuditResetDays(plan),
   };
+}
+
+export async function logUsage(
+  userId: string,
+  actionType: string,
+  websiteUrl?: string,
+  resultData?: unknown
+): Promise<void> {
+  await prisma.usageHistory.create({
+    data: {
+      userId,
+      actionType,
+      websiteUrl: websiteUrl ?? null,
+      resultData: resultData ?? undefined,
+    },
+  });
 }

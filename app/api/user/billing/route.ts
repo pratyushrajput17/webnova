@@ -51,10 +51,14 @@ export async function GET() {
     const planConfig = PLANS.find((p) => p.key === user.plan);
     const planDisplay = PLAN_DISPLAY[user.plan] ?? PLAN_DISPLAY.FREE;
 
-    const [usage, redeemHistory] = await Promise.all([
+    const [usage, activeSubscription, redeemHistory] = await Promise.all([
       getUserUsage(user.id),
-      prisma.redeemCode.findMany({
-        where: { usedByUserId: user.id },
+      prisma.userSubscription.findFirst({
+        where: { userId: user.id, status: "active" },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.redeemHistory.findMany({
+        where: { userId: user.id },
         orderBy: { usedAt: "desc" },
         select: {
           code: true,
@@ -65,11 +69,6 @@ export async function GET() {
       }),
     ]);
 
-    const redeemedCode =
-      Array.isArray(user.redeemedCodes) && user.redeemedCodes.length > 0
-        ? user.redeemedCodes[0]
-        : null;
-
     const status =
       user.plan === "FREE"
         ? "Active"
@@ -78,16 +77,19 @@ export async function GET() {
           ? "Expired"
           : "Active";
 
+    const subscriptionStart = activeSubscription
+      ? activeSubscription.startsAt.toISOString()
+      : user.createdAt.toISOString();
+
     return NextResponse.json({
       plan: user.plan,
       planName: planDisplay.label,
       planPrice: planConfig ? planConfig.price : null,
       planPeriod: planConfig ? planConfig.period : null,
       status,
-      subscriptionStart: user.createdAt.toISOString(),
+      subscriptionStart,
       subscriptionEndsAt: user.subscriptionEndsAt?.toISOString() ?? null,
       isLifetime: user.plan === "LIFETIME",
-      redeemedCode: redeemedCode ? String(redeemedCode) : null,
       audit: {
         used: auditQuota.used,
         limit: auditQuota.limit,

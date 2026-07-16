@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
+import { logUsage } from "@/lib/usage";
 import {
   validateUrl,
   normalizeUrl,
@@ -204,6 +205,8 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { monthlyAuditCount: { increment: 1 } },
     });
+
+    logUsage(user.id, "audit", targetUrl).catch(() => {});
 
     import("@/lib/notifications").then(({ createNotification }) => {
       createNotification(

@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
+import { logUsage } from "@/lib/usage";
 import { validateUrl, normalizeUrl, analyzeWebsite } from "@/lib/audit";
 import { checkCompetitorQuota, needsReset } from "@/lib/quota";
 
@@ -261,6 +262,8 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { competitorCount: { increment: 1 } },
     });
+
+    logUsage(user.id, "competitor_analysis", yourUrl).catch(() => {});
 
     return NextResponse.json(comparisonData);
   } catch (error) {

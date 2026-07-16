@@ -16,6 +16,7 @@ import {
   TrendingUp,
   FileText,
   BarChart3,
+  Users,
   Loader2,
 } from "lucide-react";
 import axios from "axios";
@@ -30,6 +31,11 @@ interface DashboardData {
   auditsThisMonth: number;
   averageSeoScore: number;
   reportsGenerated: number;
+  competitorAnalyses: number;
+  auditRemaining: number;
+  auditLimit: number;
+  competitorRemaining: number;
+  competitorLimit: number;
   plan: string;
   subscriptionEndsAt: string | null;
   createdAt: string;
@@ -86,6 +92,16 @@ export default function DashboardPage() {
     {
       title: "Reports Generated",
       value: data?.reportsGenerated ?? 0,
+      icon: BarChart3,
+    },
+    {
+      title: "Competitor Analyses",
+      value: data?.competitorAnalyses ?? 0,
+      icon: Users,
+    },
+    {
+      title: "Remaining Audits",
+      value: data ? `${data.auditRemaining}/${data.auditLimit}` : "0/0",
       icon: BarChart3,
     },
   ];
