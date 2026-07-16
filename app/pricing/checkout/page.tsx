@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useMemo, useState, useCallback } from "react";
+import { Suspense, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -55,8 +56,10 @@ function FeatureIcon({ name }: { name: string }) {
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const razorpayLoaded = useRef(false);
 
   const planKey = searchParams.get("plan")?.toUpperCase() ?? "";
 
@@ -64,6 +67,22 @@ function CheckoutContent() {
     () => PLANS.find((p) => p.key === planKey),
     [planKey],
   );
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      router.replace(`/login?redirect_url=/pricing/checkout?plan=${planKey.toLowerCase()}`);
+    }
+  }, [isLoaded, isSignedIn, router, planKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || window.Razorpay || razorpayLoaded.current) return;
+    razorpayLoaded.current = true;
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   const handlePayment = useCallback(async () => {
     if (!plan) return;
@@ -84,61 +103,56 @@ function CheckoutContent() {
 
       const order = await res.json();
 
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => {
-        const options = {
-          key: order.key_id,
-          amount: order.amount,
-          currency: order.currency,
-          name: "WebNova",
-          description: `${plan.name} Plan`,
-          order_id: order.id,
-          prefill: { contact: "", email: "" },
-          theme: { color: "#18181b" },
-          modal: {
-            ondismiss: () => setLoading(false),
-          },
-          handler: async (response: {
-            razorpay_payment_id: string;
-            razorpay_order_id: string;
-            razorpay_signature: string;
-          }) => {
-            try {
-              const verifyRes = await fetch("/api/payment/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  plan: plan.key,
-                }),
-              });
+      if (!window.Razorpay) {
+        throw new Error("Payment gateway is still loading. Please try again.");
+      }
 
-              if (!verifyRes.ok) {
-                const errData = await verifyRes.json();
-                throw new Error(errData.error || "Payment verification failed.");
-              }
+      const options = {
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "WebNova",
+        description: `${plan.name} Plan`,
+        order_id: order.id,
+        prefill: {},
+        theme: { color: "#18181b" },
+        modal: {
+          ondismiss: () => setLoading(false),
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan: plan.key,
+              }),
+            });
 
-              router.push("/dashboard/billing?payment=success");
-            } catch (err) {
-              setError(
-                err instanceof Error ? err.message : "Payment verification failed."
-              );
-              setLoading(false);
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json();
+              throw new Error(errData.error || "Payment verification failed.");
             }
-          },
-        };
 
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+            router.push("/dashboard/billing?payment=success");
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "Payment verification failed."
+            );
+            setLoading(false);
+          }
+        },
       };
-      script.onerror = () => {
-        setError("Failed to load payment gateway. Please try again.");
-        setLoading(false);
-      };
-      document.body.appendChild(script);
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."
@@ -146,6 +160,14 @@ function CheckoutContent() {
       setLoading(false);
     }
   }, [plan, router]);
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
 
   if (!plan) {
     return (

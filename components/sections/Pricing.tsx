@@ -66,10 +66,10 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = useCallback(() => {
-    setLoading(true);
     if (!isLoaded) return;
+    setLoading(true);
     if (!isSignedIn) {
-      router.push("/login");
+      router.push(`/login?redirect_url=/pricing/checkout?plan=${plan.key.toLowerCase()}`);
     } else {
       router.push(`/pricing/checkout?plan=${plan.key.toLowerCase()}`);
     }
