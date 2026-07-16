@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   Zap,
@@ -57,6 +58,7 @@ function getProgressTrackColor(pct: number): string {
 }
 
 export default function UsageCard() {
+  const router = useRouter();
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -145,7 +147,7 @@ export default function UsageCard() {
         </div>
         {usage.plan === "FREE" && (
           <button
-            onClick={() => {}} // TODO: link to pricing
+            onClick={() => router.push("/pricing/checkout?plan=FREE")}
             className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
           >
             Upgrade

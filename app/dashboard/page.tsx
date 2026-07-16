@@ -15,7 +15,7 @@ import {
   Globe,
   TrendingUp,
   Users,
-  AlertTriangle,
+  FileText,
   Loader2,
 } from "lucide-react";
 import axios from "axios";
@@ -29,6 +29,7 @@ interface DashboardData {
   totalAudits: number;
   averageSeoScore: number;
   competitorsTracked: number;
+  reportsGenerated: number;
   issuesFound: number;
   chartData: { month: string; score: number }[];
   recentActivity: { text: string; time: string }[];
@@ -76,14 +77,14 @@ export default function DashboardPage() {
       icon: TrendingUp,
     },
     {
-      title: "Competitors Tracked",
+      title: "Competitor Reports",
       value: data?.competitorsTracked ?? 0,
       icon: Users,
     },
     {
-      title: "Issues Found",
-      value: data?.issuesFound ?? 0,
-      icon: AlertTriangle,
+      title: "Reports Generated",
+      value: data?.reportsGenerated ?? 0,
+      icon: FileText,
     },
   ];
 

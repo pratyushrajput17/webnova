@@ -100,6 +100,7 @@ export async function GET() {
       totalAudits,
       averageSeoScore,
       competitorsTracked,
+      reportsGenerated: totalAudits,
       issuesFound,
       chartData,
       recentAudits,
