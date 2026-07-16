@@ -214,9 +214,12 @@ function CheckoutContent() {
               <p className="mt-1 text-xs text-zinc-500">
                 Contact our sales team for a personalized recommendation.
               </p>
-              <button className="mt-4 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50">
+              <a
+                href="mailto:dev.webnovaseo@gmail.com?subject=WebNova%20Support%20Request"
+                className="mt-4 flex w-full items-center justify-center rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+              >
                 Contact Sales
-              </button>
+              </a>
             </div>
           </motion.div>
         </div>

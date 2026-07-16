@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Headphones } from "lucide-react";
 import Container from "@/components/shared/Container";
 
 export default function CTA() {
@@ -32,10 +32,13 @@ export default function CTA() {
                 Start Free
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <button className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-10 py-4 text-base font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50">
-                <Play className="h-4 w-4" />
-                Book Demo
-              </button>
+              <a
+                href="mailto:dev.webnovaseo@gmail.com?subject=WebNova%20Support%20Request"
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-10 py-4 text-base font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50"
+              >
+                <Headphones className="h-4 w-4" />
+                Contact Sales
+              </a>
             </div>
           </div>
         </motion.div>

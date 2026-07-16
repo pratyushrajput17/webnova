@@ -14,12 +14,7 @@ import {
   Loader2,
   AlertTriangle,
   Infinity,
-  Crown,
-  Calendar,
-  Hash,
-  ExternalLink,
   Ticket,
-  History,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
