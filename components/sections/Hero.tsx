@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { ArrowRight, Search } from "lucide-react";
 import Container from "@/components/shared/Container";
@@ -29,6 +31,17 @@ const audits = [
 ];
 
 export default function Hero() {
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
+
+  const handleAnalyze = () => {
+    if (isSignedIn) {
+      router.push("/dashboard/audits");
+    } else {
+      router.push("/login?redirect_url=/dashboard/audits");
+    }
+  };
+
   return (
     <section className="relative overflow-hidden py-20 md:py-28">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0.03)_0%,_transparent_60%)]" />
@@ -108,8 +121,12 @@ export default function Hero() {
                 placeholder="Enter your website URL"
                 defaultValue="https://yourwebsite.com"
                 className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-zinc-400"
+                onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               />
-              <button className="rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90">
+              <button
+                onClick={handleAnalyze}
+                className="rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90"
+              >
                 Analyze
               </button>
             </div>
