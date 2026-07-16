@@ -61,8 +61,8 @@ function ProgressBar({
   icon: typeof Zap;
 }) {
   const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / limit) * 100));
-  const isWarning = pct >= 70 && pct < 90;
-  const isCritical = pct >= 90;
+  const isWarning = pct >= 80 && pct < 95;
+  const isCritical = pct >= 95;
   const barColor = isCritical
     ? "bg-red-500"
     : isWarning

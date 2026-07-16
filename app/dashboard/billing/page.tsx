@@ -81,7 +81,7 @@ function QuotaBar({
 }) {
   const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / limit) * 100));
   const barColor =
-    pct >= 80 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500";
+    pct >= 95 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
 
   return (
     <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4">
@@ -245,7 +245,7 @@ export default function BillingPage() {
             </div>
             <div>
               <p className="text-sm text-zinc-500">
-                {data.isLifetime ? "Expiration" : "Next Billing Date"}
+                {data.isLifetime ? "Lifetime Expiration" : "Renewal Date"}
               </p>
               <p className="mt-1 text-lg font-semibold">
                 {data.subscriptionEndsAt

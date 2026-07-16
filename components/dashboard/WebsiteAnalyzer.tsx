@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Loader2, X, Zap, Crown, Sparkles } from "lucide-react";
@@ -26,6 +27,7 @@ interface QuotaExceededData {
 }
 
 export default function WebsiteAnalyzer() {
+  const router = useRouter();
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -197,7 +199,7 @@ export default function WebsiteAnalyzer() {
 
               <div className="mt-6 grid gap-3">
                 <button
-                  onClick={() => setQuotaModal(null)}
+                  onClick={() => router.push(`/pricing/checkout?plan=${quotaModal.plan}`)}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90"
                 >
                   <Crown className="h-4 w-4" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import CompetitorReportPDF from "@/components/pdf/CompetitorReportPDF";
@@ -24,6 +25,9 @@ import {
   RefreshCw,
   ChevronRight,
   FileDown,
+  Crown,
+  Zap,
+  X,
 } from "lucide-react";
 
 interface MetricData {
@@ -76,7 +80,16 @@ const metricIcons: Record<string, typeof BarChart3> = {
   "External Links": Link,
 };
 
+interface QuotaExceededData {
+  error: string;
+  code: string;
+  limit: number;
+  used: number;
+  plan: string;
+}
+
 export default function CompetitorsPage() {
+  const router = useRouter();
   const [yourSite, setYourSite] = useState("");
   const [competitorSite, setCompetitorSite] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,6 +99,7 @@ export default function CompetitorsPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+  const [quotaModal, setQuotaModal] = useState<QuotaExceededData | null>(null);
 
   const fetchHistory = async () => {
     try {
@@ -123,8 +137,15 @@ export default function CompetitorsPage() {
       setResult(res.data);
       fetchHistory();
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error);
+      if (axios.isAxiosError(err) && err.response?.data) {
+        const data = err.response.data;
+        if (data.code === "COMPETITOR_QUOTA_EXCEEDED") {
+          setQuotaModal(data as QuotaExceededData);
+        } else if (data.error) {
+          setError(data.error);
+        } else {
+          setError("Comparison failed. Please try again.");
+        }
       } else {
         setError("Comparison failed. Please try again.");
       }
@@ -575,6 +596,76 @@ export default function CompetitorsPage() {
                 View History
               </button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {quotaModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-xl"
+            >
+              <button
+                onClick={() => setQuotaModal(null)}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+                <Zap className="h-7 w-7 text-amber-500" />
+              </div>
+
+              <h3 className="text-center text-xl font-bold text-zinc-800">
+                Monthly Limit Reached
+              </h3>
+              <p className="mt-2 text-center text-sm text-zinc-500">
+                You have reached your monthly competitor analysis limit on the{" "}
+                <span className="font-medium text-zinc-700">
+                  {quotaModal.plan === "FREE" ? "Free" : quotaModal.plan === "STARTER" ? "Starter" : quotaModal.plan === "PRO" ? "Professional" : quotaModal.plan === "LIFETIME" ? "Lifetime Access" : quotaModal.plan} plan
+                </span>
+                .
+              </p>
+
+              <div className="mt-6 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-zinc-500">Analyses used</span>
+                  <span className="font-medium text-zinc-800">
+                    {quotaModal.used} / {quotaModal.limit}
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-zinc-400">
+                Upgrade to a higher plan for unlimited competitor analysis.
+              </p>
+
+              <div className="mt-6 grid gap-3">
+                <button
+                  onClick={() => router.push(`/pricing/checkout?plan=${quotaModal.plan}`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90"
+                >
+                  <Crown className="h-4 w-4" />
+                  Upgrade Plan
+                </button>
+                <button
+                  onClick={() => setQuotaModal(null)}
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-200 px-6 py-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
