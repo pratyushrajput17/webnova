@@ -116,12 +116,14 @@ export default function GlobalSearch() {
         onFocus={() => { if (results.length > 0) setOpen(true); }}
         onKeyDown={handleKeyDown}
         placeholder="Search audits, competitors, codes..."
+        aria-label="Search"
         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-10 text-sm outline-none transition-colors focus:border-zinc-300 focus:bg-white"
       />
       {query && (
         <button
           onClick={() => { setQuery(""); setResults([]); setOpen(false); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+          aria-label="Clear search"
         >
           <X className="h-4 w-4" />
         </button>

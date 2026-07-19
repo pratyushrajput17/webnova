@@ -1,5 +1,4 @@
 import Razorpay from "razorpay";
-import { PLANS } from "./pricing";
 
 function getAmount(planKey: string): number {
   const prices: Record<string, number> = {

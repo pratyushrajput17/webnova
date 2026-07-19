@@ -14,6 +14,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
       <button
         onClick={onMenuClick}
         className="shrink-0 rounded-xl p-2 hover:bg-zinc-100 lg:hidden"
+        aria-label="Open navigation menu"
       >
         <Menu className="h-5 w-5" />
       </button>

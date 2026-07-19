@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Globe,
   FileText,
-  Clock,
 } from "lucide-react";
 
 interface QuotaInfo {

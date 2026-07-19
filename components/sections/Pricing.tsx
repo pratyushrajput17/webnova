@@ -13,11 +13,6 @@ import {
   Headphones,
   Users,
   Sparkles,
-  Package,
-  Brain,
-  Code2,
-  UserCheck,
-  Rocket,
   Check,
   ArrowRight,
   Loader2,
@@ -34,11 +29,6 @@ const iconMap: Record<string, typeof Search> = {
   Headphones,
   Users,
   Sparkles,
-  Package,
-  Brain,
-  Code2,
-  UserCheck,
-  Rocket,
 };
 
 const containerVariants = {
@@ -60,7 +50,7 @@ function FeatureIcon({ name }: { name: string }) {
   return <Icon className="h-4 w-4" />;
 }
 
-function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
+function PricingCard({ plan }: { plan: PricingPlan }) {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -81,9 +71,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
       className={`relative flex flex-col rounded-3xl border-2 p-8 transition-all duration-300 md:p-10 ${
         plan.popular
           ? "border-zinc-900 bg-white shadow-2xl shadow-zinc-900/10 ring-1 ring-zinc-900/5 hover:-translate-y-2 hover:shadow-3xl"
-          : plan.key === "LIFETIME"
-            ? "border-emerald-200 bg-white shadow-lg hover:-translate-y-2 hover:border-emerald-300 hover:shadow-xl"
-            : "border-zinc-200 bg-white shadow-lg hover:-translate-y-2 hover:border-zinc-300 hover:shadow-xl"
+          : "border-zinc-200 bg-white shadow-lg hover:-translate-y-2 hover:border-zinc-300 hover:shadow-xl"
       }`}
     >
       {plan.badge && (
@@ -158,9 +146,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
           className={`group inline-flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
             plan.popular
               ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 hover:bg-zinc-800 hover:shadow-xl"
-              : plan.key === "LIFETIME"
-                ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 hover:shadow-xl"
-                : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
+              : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
           }`}
         >
           {loading ? (
@@ -204,10 +190,10 @@ export default function Pricing() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3"
+          className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-2"
         >
-          {PLANS.map((plan, i) => (
-            <PricingCard key={plan.key} plan={plan} index={i} />
+          {PLANS.map((plan) => (
+            <PricingCard key={plan.key} plan={plan} />
           ))}
         </motion.div>
 

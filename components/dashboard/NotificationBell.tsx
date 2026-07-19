@@ -141,6 +141,7 @@ export default function NotificationBell() {
         ref={bellRef}
         onClick={() => setOpen((o) => !o)}
         className="relative rounded-xl p-2 transition-colors hover:bg-zinc-100"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (

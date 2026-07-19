@@ -57,32 +57,6 @@ export const PLANS: PricingPlan[] = [
       { text: "AI-powered insights", icon: "Sparkles" },
     ],
   },
-  {
-    key: "LIFETIME",
-    name: "Lifetime Access",
-    price: "$83",
-    period: "one-time",
-    description: "5-year plan — everything included",
-    savings: "One-time payment",
-    badge: "Best Value",
-    cta: "Get Lifetime Access",
-    popular: false,
-    features: [
-      { text: "Unlimited website audits", icon: "Search" },
-      { text: "Unlimited competitor tracking", icon: "GitCompare" },
-      { text: "Advanced SEO recommendations", icon: "FileText" },
-      { text: "White-label PDF reports", icon: "FileDown" },
-      { text: "Priority support", icon: "Headphones" },
-      { text: "Team collaboration", icon: "Users" },
-      { text: "Historical SEO tracking", icon: "Clock" },
-      { text: "AI-powered insights", icon: "Sparkles" },
-      { text: "Future feature updates included", icon: "Package" },
-      { text: "Premium AI features", icon: "Brain" },
-      { text: "API access", icon: "Code2" },
-      { text: "Priority onboarding + dedicated account manager", icon: "UserCheck" },
-      { text: "Premium support + early access to new features", icon: "Rocket" },
-    ],
-  },
 ];
 
 export const PLAN_DISPLAY: Record<

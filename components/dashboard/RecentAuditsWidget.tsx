@@ -125,6 +125,7 @@ export default function RecentAuditsWidget() {
                   onClick={(e) => handleDelete(audit.id, e)}
                   disabled={deleting === audit.id}
                   className="rounded-lg p-2 text-zinc-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 disabled:opacity-50"
+                  aria-label="Delete audit"
                 >
                   {deleting === audit.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

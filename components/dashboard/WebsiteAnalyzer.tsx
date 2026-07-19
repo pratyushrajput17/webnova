@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Loader2, X, Zap, Crown, Sparkles } from "lucide-react";
+import { Globe, Loader2, X, Zap, Crown } from "lucide-react";
 
 interface QuotaExceededData {
   error: string;
@@ -94,6 +94,7 @@ export default function WebsiteAnalyzer() {
             <input
               type="text"
               placeholder="https://example.com"
+              aria-label="Website URL to audit"
               value={url}
               onChange={(e) => {
                 setUrl(e.target.value);
@@ -145,6 +146,7 @@ export default function WebsiteAnalyzer() {
               <button
                 onClick={() => setQuotaModal(null)}
                 className="absolute right-4 top-4 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </button>

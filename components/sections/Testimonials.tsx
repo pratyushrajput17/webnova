@@ -5,23 +5,23 @@ import Container from "@/components/shared/Container";
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
+    name: "Beta Tester",
     role: "Marketing Director",
-    company: "Growth Labs",
+    company: "SaaS Company",
     review:
       "WebNova helped us improve our SEO score by 40% in less than two months.",
   },
   {
-    name: "David Chen",
+    name: "Beta Tester",
     role: "Founder",
-    company: "StartupForge",
+    company: "Startup",
     review:
       "The AI recommendations are incredibly accurate and easy to implement.",
   },
   {
-    name: "Emily Roberts",
+    name: "Beta Tester",
     role: "Product Manager",
-    company: "ScaleUp Inc.",
+    company: "Tech Company",
     review:
       "We replaced multiple tools with WebNova and saved countless hours.",
   },

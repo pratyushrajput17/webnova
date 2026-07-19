@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
 import { User, Bell, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +17,7 @@ const sectionVariants = {
 };
 
 export default function SettingsPage() {
+  const { user } = useUser();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -43,7 +46,7 @@ export default function SettingsPage() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                defaultValue="John Doe"
+                defaultValue={user?.fullName ?? ""}
                 className="h-11 rounded-xl border-zinc-200 bg-zinc-50 px-4"
               />
             </div>
@@ -52,7 +55,7 @@ export default function SettingsPage() {
               <Input
                 id="email"
                 type="email"
-                defaultValue="john@webnova.com"
+                defaultValue={user?.primaryEmailAddress?.emailAddress ?? ""}
                 className="h-11 rounded-xl border-zinc-200 bg-zinc-50 px-4"
               />
             </div>
@@ -60,7 +63,8 @@ export default function SettingsPage() {
               <Label htmlFor="company">Company Name</Label>
               <Input
                 id="company"
-                defaultValue="WebNova Inc."
+                defaultValue=""
+                placeholder="Your company name"
                 className="h-11 rounded-xl border-zinc-200 bg-zinc-50 px-4"
               />
             </div>

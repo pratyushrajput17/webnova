@@ -8,7 +8,6 @@ import {
   Users,
   Ticket,
   BarChart3,
-  Settings,
   Clock,
   X,
   Shield,
@@ -21,7 +20,6 @@ const navItems = [
   { href: "/admin/redeem-codes", label: "Redeem Codes", icon: Ticket },
   { href: "/admin/redeem/history", label: "Redeem History", icon: Clock },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -51,7 +49,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             <Shield className="h-5 w-5 text-indigo-600" />
             Admin
           </Link>
-          <button onClick={onClose} className="lg:hidden">
+          <button onClick={onClose} className="lg:hidden" aria-label="Close sidebar">
             <X className="h-5 w-5" />
           </button>
         </div>

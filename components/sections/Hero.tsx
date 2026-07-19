@@ -119,7 +119,7 @@ export default function Hero() {
               <input
                 type="text"
                 placeholder="Enter your website URL"
-                defaultValue="https://yourwebsite.com"
+                aria-label="Enter your website URL"
                 className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-zinc-400"
                 onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               />

@@ -14,9 +14,6 @@ export const COMPETITOR_LIMITS: Record<string, number> = {
   ENTERPRISE: -1,
 };
 
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-
 export interface QuotaResult {
   withinQuota: boolean;
   limit: number;

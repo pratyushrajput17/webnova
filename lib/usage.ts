@@ -69,7 +69,7 @@ export async function getRemainingAudits(
   }
 
   let auditCount = user.monthlyAuditCount;
-  let auditReset = user.lastResetDate;
+  const auditReset = user.lastResetDate;
   const auditResetDays = getAuditResetDays(user.plan);
 
   if (needsReset(auditReset, auditResetDays)) {
@@ -93,7 +93,7 @@ export async function getRemainingCompetitors(
   }
 
   let compCount = user.competitorCount;
-  let compReset = user.competitorLastReset;
+  const compReset = user.competitorLastReset;
 
   if (needsReset(compReset, 30)) {
     compCount = 0;

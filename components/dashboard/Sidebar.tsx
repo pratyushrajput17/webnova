@@ -52,7 +52,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <Link href="/" className="text-2xl font-bold">
             WebNova
           </Link>
-          <button onClick={onClose} className="lg:hidden">
+          <button onClick={onClose} className="lg:hidden" aria-label="Close sidebar">
             <X className="h-5 w-5" />
           </button>
         </div>
