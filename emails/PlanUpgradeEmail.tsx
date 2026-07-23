@@ -45,11 +45,14 @@ export default function PlanUpgradeEmail({
   subscriptionEndsAt,
 }: PlanUpgradeEmailProps) {
   const colors = planColors[plan] ?? planColors.STARTER;
-  const endsAt = new Date(subscriptionEndsAt).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const parsedDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : null;
+  const endsAt = parsedDate && !isNaN(parsedDate.getTime())
+    ? parsedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <Html>
@@ -61,7 +64,7 @@ export default function PlanUpgradeEmail({
             <Section className="rounded-2xl bg-white p-8 shadow-sm">
               <Section className="text-center">
                 <Img
-                  src="https://webnova.dev/logo.png"
+                  src="https://webnova.business/logo.png"
                   alt="WebNova"
                   width={48}
                   height={48}
@@ -109,14 +112,14 @@ export default function PlanUpgradeEmail({
                   </Text>
                   <Text className="m-0 text-sm text-zinc-500">
                     Expires:{" "}
-                    <span className="font-medium text-zinc-800">{endsAt}</span>
+                    <span className="font-medium text-zinc-800">{endsAt ?? "Never (Lifetime)"}</span>
                   </Text>
                 </Section>
               </Section>
 
               <Section className="mt-8 text-center">
                 <Button
-                  href="https://webnova.dev/dashboard"
+                  href="https://webnova.business/dashboard"
                   className={`inline-flex items-center rounded-xl bg-gradient-to-r ${colors.gradient} px-8 py-3 text-sm font-medium text-white shadow-lg`}
                 >
                   Go to Dashboard

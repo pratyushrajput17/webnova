@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { isIPv4 } from "net";
 
 export interface LinkItem {
   href: string;
@@ -69,6 +70,51 @@ export function normalizeUrl(url: string): string {
     return trimmed;
   }
   return "https://" + trimmed;
+}
+
+function isPrivateOrReservedIP(ip: string): boolean {
+  if (isIPv4(ip)) {
+    const parts = ip.split(".").map(Number);
+    if (parts[0] === 10) return true;
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    if (parts[0] === 127) return true;
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    if (parts[0] === 0) return true;
+  }
+  return false;
+}
+
+async function validateTargetUrl(url: string): Promise<string | null> {
+  const parsed = new URL(url);
+  const hostname = parsed.hostname.toLowerCase();
+
+  const blockedHosts = ["localhost", "127.0.0.1", "::1", "0.0.0.0"];
+  if (blockedHosts.includes(hostname)) {
+    return "Target URL resolves to a private/internal address.";
+  }
+
+  const privatePatterns = [
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+  ];
+  if (privatePatterns.some((p) => p.test(hostname))) {
+    return "Target URL resolves to a private/internal address.";
+  }
+
+  try {
+    const { lookup } = await import("dns").then((m) => m.promises);
+    const addresses = await lookup(hostname, { all: true });
+    for (const addr of addresses) {
+      if (isPrivateOrReservedIP(addr.address)) {
+        return "Target URL resolves to a private/internal address.";
+      }
+    }
+  } catch {}
+
+  return null;
 }
 
 function calculateSeoScore(data: {
@@ -180,6 +226,11 @@ function generateRecommendations(data: {
 export async function analyzeWebsite(url: string): Promise<AuditResult> {
   const targetUrl = normalizeUrl(url);
 
+  const validationError = await validateTargetUrl(targetUrl);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
   const response = await axios.get(targetUrl, {
     timeout: 15000,
     headers: {
@@ -220,7 +271,6 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     if (text) h1Tags.push(text);
   });
   const h1Count = h1Tags.length;
-  console.log("[EXTRACT] h1Tags:", JSON.stringify(h1Tags), "| h1Count:", h1Count);
 
   const h2Tags: string[] = [];
   $("h2").each((_, el) => {
@@ -255,7 +305,6 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
     }
     imagesData.push({ src, alt, hasAlt });
   });
-  console.log("[EXTRACT] imagesData length:", imagesData.length, "missingAltImages length:", missingAltImages.length, "missingAltCount:", missingAltCount);
 
   const baseUrl = response.request?.res?.responseUrl || targetUrl;
   const base = new URL(baseUrl);
@@ -283,7 +332,6 @@ export async function analyzeWebsite(url: string): Promise<AuditResult> {
 
   const internalLinks = internalLinksData.length;
   const externalLinks = externalLinksData.length;
-  console.log("[EXTRACT] internalLinksData length:", internalLinks, "externalLinksData length:", externalLinks);
 
   const seoScore = calculateSeoScore({
     title: pageTitle,

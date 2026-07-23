@@ -84,16 +84,4 @@ export function getDurationForPlan(plan: string): number {
   return PLAN_DURATIONS[plan] ?? 365;
 }
 
-export function seedTestCodes(): {
-  code: string;
-  plan: string;
-  duration: number;
-}[] {
-  return [
-    { code: "WEB-ST-TEST1234", plan: "STARTER", duration: 365 },
-    { code: "WEB-PRO-TEST1234", plan: "PRO", duration: 365 },
-    { code: "WEB-LIFE-TEST1234", plan: "LIFETIME", duration: 1825 },
-  ];
-}
-
 export const VALID_PLANS = ["STARTER", "PRO", "LIFETIME", "ENTERPRISE"];

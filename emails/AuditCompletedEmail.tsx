@@ -62,7 +62,7 @@ export default function AuditCompletedEmail({
             <Section className="rounded-2xl bg-white p-8 shadow-sm">
               <Section className="text-center">
                 <Img
-                  src="https://webnova.dev/logo.png"
+                  src="https://webnova.business/logo.png"
                   alt="WebNova"
                   width={48}
                   height={48}

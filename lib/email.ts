@@ -5,7 +5,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM = "WebNova <notifications@webnova.dev>";
+const FROM = "WebNova <notifications@webnova.business>";
 
 interface SendEmailOptions {
   to: string;

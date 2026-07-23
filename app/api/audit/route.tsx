@@ -11,16 +11,6 @@ import {
 } from "@/lib/audit";
 import { checkAuditQuota, needsReset, getAuditResetDays } from "@/lib/quota";
 
-function normalizeJsonField(val: unknown) {
-  if (val === null || val === undefined) return [];
-  if (Array.isArray(val)) return val;
-  try {
-    const parsed = typeof val === "string" ? JSON.parse(val) : val;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 import type { Prisma } from "@/lib/generated/prisma/client";
 import type { ReactElement } from "react";
 
@@ -127,21 +117,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[AUDIT CREATE] Extracted data:", JSON.stringify({
-      h1Count: auditResult.h1Count,
-      h1TagsCount: auditResult.h1Tags?.length ?? 0,
-      internalLinks: auditResult.internalLinks,
-      internalLinksDataCount: auditResult.internalLinksData?.length ?? 0,
-      externalLinks: auditResult.externalLinks,
-      externalLinksDataCount: auditResult.externalLinksData?.length ?? 0,
-      imageCount: auditResult.imageCount,
-      imagesDataCount: auditResult.imagesData?.length ?? 0,
-      missingAltCount: auditResult.missingAltCount,
-      missingAltImagesCount: auditResult.missingAltImages?.length ?? 0,
-      titleLength: auditResult.titleLength,
-      metaDescriptionLength: auditResult.metaDescriptionLength,
-    }));
-
     let audit;
     try {
       const createData = {
@@ -170,36 +145,7 @@ export async function POST(request: NextRequest) {
         aiRecommendations: auditResult.aiRecommendations as unknown as Prisma.InputJsonValue,
         auditType: "standard",
       };
-      console.log("[AUDIT CREATE] Saving to DB:", JSON.stringify({
-        h1TagsLength: Array.isArray(auditResult.h1Tags) ? auditResult.h1Tags.length : 0,
-        internalLinksDataLength: Array.isArray(auditResult.internalLinksData) ? auditResult.internalLinksData.length : 0,
-        externalLinksDataLength: Array.isArray(auditResult.externalLinksData) ? auditResult.externalLinksData.length : 0,
-        imagesDataLength: Array.isArray(auditResult.imagesData) ? auditResult.imagesData.length : 0,
-        missingAltImagesLength: Array.isArray(auditResult.missingAltImages) ? auditResult.missingAltImages.length : 0,
-      }));
       audit = await prisma.audit.create({ data: createData });
-      console.log("[AUDIT CREATE] Saved successfully, ID:", audit.id);
-
-      const savedH1Tags = normalizeJsonField(audit.h1Tags);
-      const savedImagesData = normalizeJsonField(audit.imagesData);
-      const savedMissingAlt = normalizeJsonField(audit.missingAltImages);
-      const savedInternalLinks = normalizeJsonField(audit.internalLinksData);
-      const savedExternalLinks = normalizeJsonField(audit.externalLinksData);
-
-      const checks = [
-        { metric: "h1Count", count: audit.h1Count, actual: savedH1Tags.length },
-        { metric: "imageCount", count: audit.imageCount, actual: savedImagesData.length },
-        { metric: "missingAltCount", count: audit.missingAltCount, actual: savedMissingAlt.length },
-        { metric: "internalLinks", count: audit.internalLinks, actual: savedInternalLinks.length },
-        { metric: "externalLinks", count: audit.externalLinks, actual: savedExternalLinks.length },
-      ];
-
-      const mismatches = checks.filter((c) => c.count !== c.actual);
-      if (mismatches.length > 0) {
-        console.warn("[AUDIT INTEGRITY] Mismatches found:", mismatches);
-      } else {
-        console.log("[AUDIT INTEGRITY] All summary counts match detail array lengths");
-      }
     } catch (dbError) {
       console.error("Audit save failed:", dbError);
       return NextResponse.json(auditResult);
@@ -223,7 +169,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => {});
 
     if (user.email && !user.email.endsWith("@placeholder.com")) {
-      const auditUrl = `https://webnova.dev/dashboard/history/${audit.id}`;
+      const auditUrl = `https://webnova.business/dashboard/history/${audit.id}`;
       (async () => {
         try {
           const [mod, Email] = await Promise.all([

@@ -27,7 +27,7 @@ export default function WelcomeEmail({ name }: WelcomeEmailProps) {
             <Section className="rounded-2xl bg-white p-8 shadow-sm">
               <Section className="text-center">
                 <Img
-                  src="https://webnova.dev/logo.png"
+                  src="https://webnova.business/logo.png"
                   alt="WebNova"
                   width={48}
                   height={48}
@@ -78,7 +78,7 @@ export default function WelcomeEmail({ name }: WelcomeEmailProps) {
 
               <Section className="mt-8 text-center">
                 <Button
-                  href="https://webnova.dev/dashboard"
+                  href="https://webnova.business/dashboard"
                   className="inline-flex items-center rounded-xl bg-zinc-900 px-8 py-3 text-sm font-medium text-white"
                 >
                   Go to Dashboard

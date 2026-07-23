@@ -2,6 +2,9 @@ import { pdf } from "@react-pdf/renderer";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function downloadPDF(doc: any, filename: string): Promise<void> {
+  if (typeof document === "undefined") {
+    throw new Error("downloadPDF can only be used in the browser.");
+  }
   const blob = await pdf(doc).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

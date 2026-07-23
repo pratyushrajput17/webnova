@@ -2,24 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/user";
-import { parseCode, seedTestCodes } from "@/lib/codes";
-import { logUsage } from "@/lib/usage";
+import { parseCode } from "@/lib/codes";
 import type { ReactElement } from "react";
-
-async function ensureTestCodes() {
-  const existing = await prisma.redeemCode.findFirst({
-    where: { code: { in: ["WEB-ST-TEST1234", "WEB-PRO-TEST1234", "WEB-LIFE-TEST1234"] } },
-  });
-  if (existing) return;
-
-  const testCodes = seedTestCodes().map((c) => ({
-    code: c.code,
-    plan: c.plan,
-    duration: c.duration,
-  }));
-
-  await prisma.redeemCode.createMany({ data: testCodes });
-}
 
 function getSubscriptionEndsAt(plan: string, durationDays: number): Date | null {
   if (plan === "FREE") return null;
@@ -64,8 +48,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    await ensureTestCodes();
 
     const redeemCode = await prisma.redeemCode.findUnique({
       where: { code: rawCode },

@@ -26,6 +26,8 @@ model User {
   usageHistory        UsageHistory[]
   subscriptions       UserSubscription[]
   redeemHistory       RedeemHistory[]
+  notifications       Notification[]
+  competitorComparisons CompetitorComparison[]
 }
 
 model UsageHistory {
@@ -85,6 +87,8 @@ model CompetitorComparison {
   comparison      Json
   summary         String
   createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -149,6 +153,8 @@ model Notification {
   link      String?
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }

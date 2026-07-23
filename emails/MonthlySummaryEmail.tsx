@@ -51,7 +51,7 @@ export default function MonthlySummaryEmail({
             <Section className="rounded-2xl bg-white p-8 shadow-sm">
               <Section className="text-center">
                 <Img
-                  src="https://webnova.dev/logo.png"
+                  src="https://webnova.business/logo.png"
                   alt="WebNova"
                   width={48}
                   height={48}
@@ -89,7 +89,7 @@ export default function MonthlySummaryEmail({
               {auditCount > 0 && (
                 <Section className="mt-8 text-center">
                   <Button
-                    href="https://webnova.dev/dashboard/history"
+                    href="https://webnova.business/dashboard/history"
                     className="inline-flex items-center rounded-xl bg-zinc-900 px-8 py-3 text-sm font-medium text-white"
                   >
                     View Full History
@@ -104,7 +104,7 @@ export default function MonthlySummaryEmail({
                   </Text>
                   <Text className="m-0 mt-1 text-sm text-amber-600">
                     <Link
-                      href="https://webnova.dev/dashboard/billing"
+                      href="https://webnova.business/dashboard/billing"
                       className="font-medium text-amber-800 underline underline-offset-2"
                     >
                       Upgrade your plan
