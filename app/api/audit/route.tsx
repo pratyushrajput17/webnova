@@ -51,9 +51,10 @@ export async function POST(request: NextRequest) {
     let user;
     try {
       user = await getOrCreateUser(clerkUserId);
-    } catch {
+    } catch (err) {
+      console.error("[AUDIT] Failed to verify user:", err);
       return NextResponse.json(
-        { error: "Failed to verify user." },
+        { error: "Failed to verify user. Please try again." },
         { status: 500 }
       );
     }

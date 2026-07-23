@@ -25,8 +25,8 @@ export async function getOrCreateUser(clerkUserId: string) {
         .filter(Boolean)
         .join(" ");
     }
-  } catch {
-    // fallback to placeholder email when Clerk API is unavailable
+  } catch (err) {
+    console.warn("[getOrCreateUser] Clerk API unavailable, using placeholder email:", err);
   }
 
   user = await prisma.user.create({
