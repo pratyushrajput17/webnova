@@ -42,9 +42,13 @@ export async function POST(request: NextRequest) {
     try {
       user = await getOrCreateUser(clerkUserId);
     } catch (err) {
-      console.error("[AUDIT] Failed to verify user:", err);
+      console.error(`[AUDIT] Failed to verify user for clerkId=${clerkUserId}:`, err);
       return NextResponse.json(
-        { error: "Failed to verify user. Please try again." },
+        {
+          error: "Failed to verify user account. This may be a temporary database issue. Please try again.",
+          code: "USER_VERIFY_FAILED",
+          details: err instanceof Error ? err.message : String(err),
+        },
         { status: 500 }
       );
     }
@@ -156,7 +160,9 @@ export async function POST(request: NextRequest) {
       data: { monthlyAuditCount: { increment: 1 } },
     });
 
-    logUsage(user.id, "audit", targetUrl).catch(() => {});
+    logUsage(user.id, "audit", targetUrl).catch((err) => {
+      console.error(`[AUDIT] Usage logging failed for userId=${user.id}:`, err);
+    });
 
     import("@/lib/notifications").then(({ createNotification }) => {
       createNotification(
@@ -166,7 +172,9 @@ export async function POST(request: NextRequest) {
         "audit_completed",
         `/dashboard/history/${audit.id}`
       );
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error(`[AUDIT] Notification creation failed for userId=${user.id}:`, err);
+    });
 
     if (user.email && !user.email.endsWith("@placeholder.com")) {
       const auditUrl = `https://webnova.business/dashboard/history/${audit.id}`;
@@ -190,7 +198,9 @@ export async function POST(request: NextRequest) {
               />
             ) as ReactElement,
           });
-        } catch {}
+        } catch (err) {
+          console.error(`[AUDIT] Audit completion email failed for ${user.email}:`, err);
+        }
       })();
     }
 

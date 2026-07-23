@@ -77,8 +77,16 @@ export async function POST(request: NextRequest) {
     let user;
     try {
       user = await getOrCreateUser(clerkUserId);
-    } catch {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+    } catch (err) {
+      console.error(`[REDEEM] Failed to verify user for clerkId=${clerkUserId}:`, err);
+      return NextResponse.json(
+        {
+          error: "Failed to verify user account. Please try again.",
+          code: "USER_VERIFY_FAILED",
+          details: err instanceof Error ? err.message : String(err),
+        },
+        { status: 500 }
+      );
     }
 
     const subscriptionEndsAt = getSubscriptionEndsAt(redeemCode.plan, redeemCode.duration);
@@ -133,7 +141,9 @@ export async function POST(request: NextRequest) {
         "plan_upgraded",
         "/dashboard/billing"
       );
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error(`[REDEEM] Notification creation failed for userId=${user.id}:`, err);
+    });
 
     if (user.email && !user.email.endsWith("@placeholder.com")) {
       (async () => {
@@ -154,7 +164,9 @@ export async function POST(request: NextRequest) {
               />
             ) as ReactElement,
           });
-        } catch {}
+        } catch (err) {
+          console.error(`[REDEEM] Upgrade email failed for ${user.email}:`, err);
+        }
       })();
     }
 

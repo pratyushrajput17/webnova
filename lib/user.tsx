@@ -8,6 +8,8 @@ export async function getOrCreateUser(clerkUserId: string) {
 
   if (user) return user;
 
+  console.log(`[getOrCreateUser] No user found for clerkId=${clerkUserId}, creating new user...`);
+
   let email = `${clerkUserId}@placeholder.com`;
   let name: string | undefined;
 
@@ -26,16 +28,22 @@ export async function getOrCreateUser(clerkUserId: string) {
         .join(" ");
     }
   } catch (err) {
-    console.warn("[getOrCreateUser] Clerk API unavailable, using placeholder email:", err);
+    console.warn(`[getOrCreateUser] Clerk API error for clerkId=${clerkUserId}:`, err);
   }
 
-  user = await prisma.user.create({
-    data: {
-      clerkId: clerkUserId,
-      email,
-      name,
-    },
-  });
+  try {
+    user = await prisma.user.create({
+      data: {
+        clerkId: clerkUserId,
+        email,
+        name,
+      },
+    });
+    console.log(`[getOrCreateUser] Created user id=${user.id} email=${email}`);
+  } catch (err) {
+    console.error(`[getOrCreateUser] DB create failed for clerkId=${clerkUserId}:`, err);
+    throw err;
+  }
 
   if (email && !email.endsWith("@placeholder.com")) {
     import("@/lib/email").then(({ sendEmail }) => {
@@ -46,7 +54,9 @@ export async function getOrCreateUser(clerkUserId: string) {
           react: <WelcomeEmail name={name ?? ""} />,
         });
       });
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error(`[getOrCreateUser] Welcome email failed for ${email}:`, err);
+    });
   }
 
   return user;

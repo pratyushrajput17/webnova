@@ -19,8 +19,16 @@ export async function GET() {
     let user;
     try {
       user = await getOrCreateUser(clerkUserId);
-    } catch {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+    } catch (err) {
+      console.error(`[USAGE] Failed to verify user for clerkId=${clerkUserId}:`, err);
+      return NextResponse.json(
+        {
+          error: "Failed to verify user account. Please try again.",
+          code: "USER_VERIFY_FAILED",
+          details: err instanceof Error ? err.message : String(err),
+        },
+        { status: 500 }
+      );
     }
 
     let auditCount = user.monthlyAuditCount;
