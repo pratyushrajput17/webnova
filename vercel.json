@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/scheduled-audits",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
