@@ -78,7 +78,7 @@ export default function Testimonials() {
         >
           {testimonials.map((testimonial) => (
             <motion.div
-              key={testimonial.name}
+              key={testimonial.role}
               variants={itemVariants}
               className="rounded-3xl border border-zinc-200 bg-white p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
             >
