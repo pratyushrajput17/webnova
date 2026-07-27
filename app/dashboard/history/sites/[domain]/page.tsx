@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import {
   ArrowLeft,
-  Loader2,
   Globe,
   BarChart3,
   ArrowRightLeft,
@@ -69,12 +68,6 @@ function getScoreColor(score: number): string {
   if (score >= 90) return "text-emerald-600";
   if (score >= 70) return "text-amber-600";
   return "text-red-600";
-}
-
-function getScoreBg(score: number): string {
-  if (score >= 90) return "bg-emerald-50 border-emerald-200";
-  if (score >= 70) return "bg-amber-50 border-amber-200";
-  return "bg-red-50 border-red-200";
 }
 
 function LoadingSkeleton() {

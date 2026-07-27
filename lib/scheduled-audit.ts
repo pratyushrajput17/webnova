@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { analyzeWebsite, validateUrl, normalizeUrl } from "@/lib/audit";
+import { analyzeWebsite, normalizeUrl } from "@/lib/audit";
 import {
   checkAuditQuota,
   needsReset,

@@ -33,7 +33,6 @@ function MetricBar({
 }: {
   metric: MetricComparison;
 }) {
-  const maxVal = Math.max(metric.current, metric.previous, 1);
   const currentWidth = (metric.current / 100) * 100;
   const previousWidth = (metric.previous / 100) * 100;
 

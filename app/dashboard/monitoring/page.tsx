@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
@@ -40,14 +40,6 @@ function getScoreColor(score: number): string {
   if (score >= 90) return "text-emerald-600 bg-emerald-50 border-emerald-200";
   if (score >= 70) return "text-amber-600 bg-amber-50 border-amber-200";
   return "text-red-600 bg-red-50 border-red-200";
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function formatDateTime(dateStr: string): string {
@@ -111,21 +103,19 @@ export default function MonitoringPage() {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  const fetchSchedules = useCallback(async () => {
-    try {
-      const res = await axios.get("/api/scheduled-audits");
-      setSchedules(res.data.schedules);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchSchedules();
-  }, [fetchSchedules]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get("/api/scheduled-audits");
+        if (!cancelled) setSchedules(res.data.schedules);
+      } catch {}
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
   const handleAdd = async () => {
     if (!addUrl.trim()) {
@@ -142,7 +132,7 @@ export default function MonitoringPage() {
       setShowAddModal(false);
       setAddUrl("");
       setAddFrequency("weekly");
-      fetchSchedules();
+      setRefreshKey((k) => k + 1);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.error) {
         setAddError(err.response.data.error);
@@ -161,7 +151,7 @@ export default function MonitoringPage() {
       await axios.patch(`/api/scheduled-audits/${id}`, {
         status: newStatus,
       });
-      fetchSchedules();
+      setRefreshKey((k) => k + 1);
     } catch {
       // silently fail
     } finally {
@@ -173,7 +163,7 @@ export default function MonitoringPage() {
     setActionLoading(id);
     try {
       await axios.post(`/api/scheduled-audits/${id}/run`);
-      fetchSchedules();
+      setRefreshKey((k) => k + 1);
     } catch {
       // silently fail
     } finally {

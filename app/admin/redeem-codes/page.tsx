@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
@@ -13,7 +13,6 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Star,
   Zap,
   Sparkles,
@@ -73,26 +72,28 @@ export default function AdminRedeemCodes() {
   const [statusFilter, setStatusFilter] = useState("");
   const [exporting, setExporting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-
-  const fetchCodes = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = { page, limit: 20 };
-      if (planFilter) params.plan = planFilter;
-      if (statusFilter) params.isUsed = statusFilter;
-      if (search) params.search = search;
-
-      const res = await axios.get("/api/admin/codes", { params });
-      setCodes(res.data.codes);
-      setPagination(res.data.pagination);
-      setStats(res.data.stats);
-    } catch {}
-    setLoading(false);
-  }, [page, planFilter, statusFilter, search]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchCodes();
-  }, [fetchCodes]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const params: Record<string, string | number> = { page, limit: 20 };
+        if (planFilter) params.plan = planFilter;
+        if (statusFilter) params.isUsed = statusFilter;
+        if (search) params.search = search;
+        const res = await axios.get("/api/admin/codes", { params });
+        if (!cancelled) {
+          setCodes(res.data.codes);
+          setPagination(res.data.pagination);
+          setStats(res.data.stats);
+        }
+      } catch {}
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [page, planFilter, statusFilter, search, refreshKey]);
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -124,7 +125,7 @@ export default function AdminRedeemCodes() {
       await axios.delete("/api/admin/codes", {
         params: planFilter ? { plan: planFilter } : {},
       });
-      await fetchCodes();
+      setRefreshKey((k) => k + 1);
     } catch {}
     setRegenerating(false);
   };

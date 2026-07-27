@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- All img src URLs come from audited websites and cannot be added to next/image remotePatterns */
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {

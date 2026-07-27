@@ -17,17 +17,6 @@ function normalizeDomain(url: string): string {
   }
 }
 
-function normalizeJsonField(val: unknown): unknown[] {
-  if (val === null || val === undefined) return [];
-  if (Array.isArray(val)) return val;
-  try {
-    const parsed = typeof val === "string" ? JSON.parse(val) : val;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 interface AuditData {
   id: string;
   websiteUrl: string;
@@ -81,11 +70,6 @@ function compareAudits(current: AuditData, previous: AuditData): ComparisonResul
   const fixedIssues: string[] = [];
   const newIssues: string[] = [];
   const persistentIssues: string[] = [];
-
-  const currentH1 = normalizeJsonField(current.h1Tags) as string[];
-  const previousH1 = normalizeJsonField(previous.h1Tags) as string[];
-  const currentH2 = normalizeJsonField(current.h2Tags) as string[];
-  const previousH2 = normalizeJsonField(previous.h2Tags) as string[];
 
   if (!previous.pageTitle && current.pageTitle) {
     fixedIssues.push("Meta title added");

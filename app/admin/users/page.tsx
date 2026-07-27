@@ -49,23 +49,24 @@ export default function AdminUsers() {
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get("/api/admin/users", {
-        params: { page, limit: 20 },
-      });
-      setUsers(res.data.users);
-      setPagination(res.data.pagination);
-    } catch {}
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      await fetchUsers();
-      setLoading(false);
+      try {
+        const res = await axios.get("/api/admin/users", {
+          params: { page, limit: 20 },
+        });
+        if (!cancelled) {
+          setUsers(res.data.users);
+          setPagination(res.data.pagination);
+        }
+      } catch {}
+      if (!cancelled) setLoading(false);
     })();
-  }, [page]);
+    return () => { cancelled = true; };
+  }, [page, refreshKey]);
 
   const filtered = search
     ? users.filter(
@@ -84,7 +85,7 @@ export default function AdminUsers() {
         { plan: editingPlan.plan }
       );
       setEditingPlan(null);
-      fetchUsers();
+      setRefreshKey((k) => k + 1);
     } catch {}
     setActionLoading(false);
   };
@@ -95,7 +96,7 @@ export default function AdminUsers() {
     try {
       await axios.delete(`/api/admin/users/${deletingId}`);
       setDeletingId(null);
-      fetchUsers();
+      setRefreshKey((k) => k + 1);
     } catch {}
     setActionLoading(false);
   };

@@ -10,7 +10,6 @@ import {
   Download,
   Calendar,
   CheckCircle2,
-  Globe,
   Loader2,
   AlertTriangle,
   BarChart3,
@@ -70,11 +69,9 @@ function formatDate(dateStr: string): string {
 }
 
 function ScoreBadge({
-  label,
   score,
   icon: Icon,
 }: {
-  label: string;
   score: number;
   icon: typeof BarChart3;
 }) {
@@ -287,9 +284,9 @@ export default function ReportsPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <ScoreBadge label="SEO" score={audit.seoScore} icon={BarChart3} />
-              <ScoreBadge label="Perf" score={audit.performanceScore} icon={Zap} />
-              <ScoreBadge label="A11y" score={audit.accessibilityScore} icon={Eye} />
+              <ScoreBadge score={audit.seoScore} icon={BarChart3} />
+              <ScoreBadge score={audit.performanceScore} icon={Zap} />
+              <ScoreBadge score={audit.accessibilityScore} icon={Eye} />
             </div>
 
             <button
