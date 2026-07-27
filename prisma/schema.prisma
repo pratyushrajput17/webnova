@@ -28,6 +28,7 @@ model User {
   redeemHistory       RedeemHistory[]
   notifications       Notification[]
   competitorComparisons CompetitorComparison[]
+  scheduledAudits      ScheduledAudit[]
 }
 
 model UsageHistory {
@@ -157,4 +158,25 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model ScheduledAudit {
+  id            String    @id @default(cuid())
+  userId        String
+  websiteUrl    String
+  frequency     String    @default("weekly")
+  status        String    @default("ACTIVE")
+  lastRunAt     DateTime?
+  nextRunAt     DateTime
+  lastAttemptAt DateTime?
+  lastRunStatus String?
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status, nextRunAt])
+  @@index([userId, websiteUrl])
 }

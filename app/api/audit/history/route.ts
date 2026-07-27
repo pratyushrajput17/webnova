@@ -27,6 +27,14 @@ export async function GET(request: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: limit,
           skip,
+          select: {
+            id: true,
+            websiteUrl: true,
+            seoScore: true,
+            pageTitle: true,
+            auditType: true,
+            createdAt: true,
+          },
         }),
         prisma.audit.count({ where: { userId: user.id } }),
       ]);

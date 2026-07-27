@@ -12,6 +12,7 @@ import {
   Settings,
   Clock,
   Ticket,
+  Radar,
   X,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/audits", label: "Website Audits", icon: Globe },
   { href: "/dashboard/history", label: "Audit History", icon: Clock },
+  { href: "/dashboard/monitoring", label: "Monitoring", icon: Radar },
   { href: "/dashboard/competitors", label: "Competitors", icon: Users },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
   { href: "/dashboard/redeem", label: "Redeem Code", icon: Ticket },

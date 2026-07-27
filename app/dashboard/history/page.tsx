@@ -36,6 +36,7 @@ interface AuditFlat {
   websiteUrl: string;
   seoScore: number;
   pageTitle: string;
+  auditType: string;
   createdAt: string;
 }
 
@@ -95,6 +96,9 @@ function SkeletonRow() {
       </td>
       <td className="px-6 py-4 text-center">
         <div className="mx-auto h-7 w-24 animate-pulse rounded-full bg-zinc-100" />
+      </td>
+      <td className="px-6 py-4 text-center">
+        <div className="mx-auto h-5 w-16 animate-pulse rounded-full bg-zinc-100" />
       </td>
       <td className="px-6 py-4">
         <div className="h-5 w-36 animate-pulse rounded bg-zinc-100" />
@@ -329,48 +333,62 @@ export default function HistoryPage() {
               <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50">
-                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                        Website URL
-                      </th>
-                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                        Page Title
-                      </th>
-                      <th className="px-6 py-4 text-center font-medium text-zinc-500">
-                        SEO Score
-                      </th>
-                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                        Date
-                      </th>
-                      <th className="px-6 py-4 text-right font-medium text-zinc-500">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAudits.map((audit) => (
-                      <tr
-                        key={audit.id}
-                        className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
-                      >
-                        <td className="px-6 py-4">
-                          <span className="font-medium text-zinc-800">
-                            {audit.websiteUrl}
+                  <tr className="border-b border-zinc-200 bg-zinc-50">
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Website URL
+                    </th>
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Page Title
+                    </th>
+                    <th className="px-6 py-4 text-center font-medium text-zinc-500">
+                      SEO Score
+                    </th>
+                    <th className="px-6 py-4 text-center font-medium text-zinc-500">
+                      Source
+                    </th>
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-right font-medium text-zinc-500">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAudits.map((audit) => (
+                    <tr
+                      key={audit.id}
+                      className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-zinc-800">
+                          {audit.websiteUrl}
+                        </span>
+                      </td>
+                      <td className="max-w-[200px] truncate px-6 py-4 text-zinc-600">
+                        {audit.pageTitle || "\u2014"}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${getScoreColor(audit.seoScore)}`}
+                        >
+                          {audit.seoScore}
+                          <span className="text-xs opacity-70">
+                            {getScoreLabel(audit.seoScore)}
                           </span>
-                        </td>
-                        <td className="max-w-[200px] truncate px-6 py-4 text-zinc-600">
-                          {audit.pageTitle || "\u2014"}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${getScoreColor(audit.seoScore)}`}
-                          >
-                            {audit.seoScore}
-                            <span className="text-xs opacity-70">
-                              {getScoreLabel(audit.seoScore)}
-                            </span>
-                          </span>
-                        </td>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            audit.auditType === "scheduled"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : "bg-zinc-100 text-zinc-600 border border-zinc-200"
+                          }`}
+                        >
+                          {audit.auditType === "scheduled" ? "Scheduled" : "Manual"}
+                        </span>
+                      </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-1.5 text-zinc-500">
                             <Clock className="h-3.5 w-3.5" />

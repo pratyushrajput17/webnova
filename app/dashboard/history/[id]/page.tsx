@@ -65,6 +65,7 @@ interface AuditDetail {
   titleLength?: number;
   metaDescriptionLength?: number;
   createdAt: string;
+  auditType?: string;
   aiRecommendations: string[];
 }
 
@@ -424,6 +425,19 @@ export default function AuditDetailPage() {
                 <Clock className="h-3.5 w-3.5" />
                 {formatDate(audit.createdAt)}
               </span>
+              {audit.auditType && (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    audit.auditType === "scheduled"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "bg-zinc-100 text-zinc-600 border border-zinc-200"
+                  }`}
+                >
+                  {audit.auditType === "scheduled"
+                    ? "Scheduled Audit"
+                    : "Manual Audit"}
+                </span>
+              )}
             </div>
           </div>
         </div>
