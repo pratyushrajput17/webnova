@@ -14,9 +14,24 @@ import {
   Clock,
   Globe,
   ArrowRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
+import WebsiteHistoryCard from "@/components/dashboard/WebsiteHistoryCard";
 
-interface Audit {
+interface WebsiteItem {
+  domain: string;
+  latestAuditId: string;
+  latestScore: number;
+  previousScore: number | null;
+  scoreChange: number | null;
+  totalAudits: number;
+  lastAuditedAt: string;
+  latestPerformanceScore: number;
+  latestAccessibilityScore: number;
+}
+
+interface AuditFlat {
   id: string;
   websiteUrl: string;
   seoScore: number;
@@ -55,6 +70,20 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+      <div className="flex items-start gap-4">
+        <div className="h-14 w-14 animate-pulse rounded-full bg-zinc-100" />
+        <div className="flex-1 space-y-2">
+          <div className="h-5 w-40 animate-pulse rounded bg-zinc-100" />
+          <div className="h-3 w-28 animate-pulse rounded bg-zinc-100" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SkeletonRow() {
   return (
     <tr className="border-b border-zinc-100">
@@ -77,19 +106,21 @@ function SkeletonRow() {
   );
 }
 
-function EmptyState({ hasSearch }: { hasSearch: boolean }) {
+function EmptyState({ hasSearch, view }: { hasSearch: boolean; view: "websites" | "list" }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white py-20 text-center">
       <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
         <Globe className="h-8 w-8 text-zinc-400" />
       </div>
       <h3 className="text-lg font-semibold text-zinc-800">
-        {hasSearch ? "No audits match your search" : "No audits found"}
+        {hasSearch ? "No results match your search" : "No audits found"}
       </h3>
       <p className="mt-2 text-sm text-zinc-500">
         {hasSearch
-          ? "Try a different URL or search term."
-          : "Analyze your first website to get started."}
+          ? "Try a different search term."
+          : view === "websites"
+            ? "Analyze your first website to see it appear here."
+            : "Analyze your first website to get started."}
       </p>
       {!hasSearch && (
         <Link
@@ -105,28 +136,54 @@ function EmptyState({ hasSearch }: { hasSearch: boolean }) {
 }
 
 export default function HistoryPage() {
-  const [audits, setAudits] = useState<Audit[]>([]);
+  const [view, setView] = useState<"websites" | "list">("websites");
+  const [websites, setWebsites] = useState<WebsiteItem[]>([]);
+  const [websitesLoading, setWebsitesLoading] = useState(true);
+  const [websitesTotal, setWebsitesTotal] = useState(0);
+
+  const [audits, setAudits] = useState<AuditFlat[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [listLoading, setListLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  const [search, setSearch] = useState("");
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await axios.get("/api/audit/history", {
-          params: { page, limit: 10 },
-        });
-        setAudits(res.data.audits);
-        setPagination(res.data.pagination);
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [page]);
+    if (view === "websites") {
+      (async () => {
+        setWebsitesLoading(true);
+        try {
+          const res = await axios.get("/api/audit/history/websites");
+          setWebsites(res.data.websites);
+          setWebsitesTotal(res.data.totalAudits);
+        } catch {
+          // silently fail
+        } finally {
+          setWebsitesLoading(false);
+        }
+      })();
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (view === "list") {
+      (async () => {
+        setListLoading(true);
+        try {
+          const res = await axios.get("/api/audit/history", {
+            params: { page, limit: 10 },
+          });
+          setAudits(res.data.audits);
+          setPagination(res.data.pagination);
+        } catch {
+          // silently fail
+        } finally {
+          setListLoading(false);
+        }
+      })();
+    }
+  }, [view, page]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this audit?")) return;
@@ -134,6 +191,15 @@ export default function HistoryPage() {
     try {
       await axios.delete(`/api/audit/${id}`);
       setAudits((prev) => prev.filter((a) => a.id !== id));
+      setWebsites((prev) =>
+        prev
+          .map((w) =>
+            w.latestAuditId === id
+              ? { ...w, totalAudits: w.totalAudits - 1 }
+              : w
+          )
+          .filter((w) => w.totalAudits > 0)
+      );
     } catch {
       // silently fail
     } finally {
@@ -141,7 +207,13 @@ export default function HistoryPage() {
     }
   };
 
-  const filtered = search.trim()
+  const filteredWebsites = search.trim()
+    ? websites.filter((w) =>
+        w.domain.toLowerCase().includes(search.toLowerCase())
+      )
+    : websites;
+
+  const filteredAudits = search.trim()
     ? audits.filter((a) =>
         a.websiteUrl.toLowerCase().includes(search.toLowerCase())
       )
@@ -157,17 +229,43 @@ export default function HistoryPage() {
         <div>
           <h1 className="text-3xl font-bold">Audit History</h1>
           <p className="mt-2 text-zinc-600">
-            View all your past website audits.
+            {view === "websites"
+              ? `${websites.length} website${websites.length !== 1 ? "s" : ""} tracked, ${websitesTotal} total audits`
+              : `${pagination?.total ?? 0} audits total`}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setView("websites")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              view === "websites"
+                ? "bg-black text-white"
+                : "border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Websites
+          </button>
+          <button
+            onClick={() => setView("list")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              view === "list"
+                ? "bg-black text-white"
+                : "border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
+            }`}
+          >
+            <List className="h-4 w-4" />
+            All Audits
+          </button>
         </div>
       </div>
 
-      <div className="mt-8 mb-6">
+      <div className="mt-6 mb-6">
         <div className="relative max-w-md">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            placeholder="Search by URL..."
+            placeholder={view === "websites" ? "Search by domain..." : "Search by URL..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition-colors focus:border-zinc-300"
@@ -175,147 +273,169 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50">
-                <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                  Website URL
-                </th>
-                <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                  Page Title
-                </th>
-                <th className="px-6 py-4 text-center font-medium text-zinc-500">
-                  SEO Score
-                </th>
-                <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-right font-medium text-zinc-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} />
+      {view === "websites" ? (
+        <>
+          {websitesLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonCard key={i} />
               ))}
-            </tbody>
-          </table>
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState hasSearch={search.trim().length > 0} />
+            </div>
+          ) : filteredWebsites.length === 0 ? (
+            <EmptyState hasSearch={search.trim().length > 0} view="websites" />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredWebsites.map((w) => (
+                <WebsiteHistoryCard key={w.domain} website={w} />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <>
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 bg-zinc-50">
-                  <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                    Website URL
-                  </th>
-                  <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                    Page Title
-                  </th>
-                  <th className="px-6 py-4 text-center font-medium text-zinc-500">
-                    SEO Score
-                  </th>
-                  <th className="px-6 py-4 text-left font-medium text-zinc-500">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-right font-medium text-zinc-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((audit) => (
-                  <tr
-                    key={audit.id}
-                    className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
-                  >
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-zinc-800">
-                        {audit.websiteUrl}
-                      </span>
-                    </td>
-                    <td className="max-w-[200px] truncate px-6 py-4 text-zinc-600">
-                      {audit.pageTitle || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${getScoreColor(audit.seoScore)}`}
-                      >
-                        {audit.seoScore}
-                        <span className="text-xs opacity-70">
-                          {getScoreLabel(audit.seoScore)}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-zinc-500">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatDate(audit.createdAt)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/dashboard/history/${audit.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          View Report
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(audit.id)}
-                          disabled={deleting === audit.id}
-                          className="rounded-lg border border-zinc-200 p-2 text-zinc-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                        >
-                          {deleting === audit.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
+          {listLoading ? (
+            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50">
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Website URL
+                    </th>
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Page Title
+                    </th>
+                    <th className="px-6 py-4 text-center font-medium text-zinc-500">
+                      SEO Score
+                    </th>
+                    <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-right font-medium text-zinc-500">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {pagination && pagination.totalPages > 1 && (
-            <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-              <p className="text-sm text-zinc-500">
-                Showing {(page - 1) * pagination.limit + 1}–
-                {Math.min(page * pagination.limit, pagination.total)} of{" "}
-                {pagination.total} audits
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </button>
-                <span className="px-3 text-sm text-zinc-500">
-                  Page {page} of {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page === pagination.totalPages}
-                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <SkeletonRow key={i} />
+                  ))}
+                </tbody>
+              </table>
             </div>
+          ) : filteredAudits.length === 0 ? (
+            <EmptyState hasSearch={search.trim().length > 0} view="list" />
+          ) : (
+            <>
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 bg-zinc-50">
+                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                        Website URL
+                      </th>
+                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                        Page Title
+                      </th>
+                      <th className="px-6 py-4 text-center font-medium text-zinc-500">
+                        SEO Score
+                      </th>
+                      <th className="px-6 py-4 text-left font-medium text-zinc-500">
+                        Date
+                      </th>
+                      <th className="px-6 py-4 text-right font-medium text-zinc-500">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAudits.map((audit) => (
+                      <tr
+                        key={audit.id}
+                        className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="font-medium text-zinc-800">
+                            {audit.websiteUrl}
+                          </span>
+                        </td>
+                        <td className="max-w-[200px] truncate px-6 py-4 text-zinc-600">
+                          {audit.pageTitle || "\u2014"}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${getScoreColor(audit.seoScore)}`}
+                          >
+                            {audit.seoScore}
+                            <span className="text-xs opacity-70">
+                              {getScoreLabel(audit.seoScore)}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 text-zinc-500">
+                            <Clock className="h-3.5 w-3.5" />
+                            {formatDate(audit.createdAt)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/dashboard/history/${audit.id}`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              View Report
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(audit.id)}
+                              disabled={deleting === audit.id}
+                              className="rounded-lg border border-zinc-200 p-2 text-zinc-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                            >
+                              {deleting === audit.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {pagination && pagination.totalPages > 1 && (
+                <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                  <p className="text-sm text-zinc-500">
+                    Showing {(page - 1) * pagination.limit + 1}\u2013
+                    {Math.min(page * pagination.limit, pagination.total)} of{" "}
+                    {pagination.total} audits
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </button>
+                    <span className="px-3 text-sm text-zinc-500">
+                      Page {page} of {pagination.totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={page === pagination.totalPages}
+                      className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
