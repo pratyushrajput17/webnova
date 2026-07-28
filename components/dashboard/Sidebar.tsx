@@ -15,6 +15,7 @@ import {
   Radar,
   X,
   Bell,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/history", label: "Audit History", icon: Clock },
   { href: "/dashboard/monitoring", label: "Monitoring", icon: Radar },
   { href: "/dashboard/alerts", label: "Alert History", icon: Bell },
+  { href: "/dashboard/fixes", label: "Fix SEO Issues", icon: Sparkles },
   { href: "/dashboard/competitors", label: "Competitors", icon: Users },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
   { href: "/dashboard/redeem", label: "Redeem Code", icon: Ticket },

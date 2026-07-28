@@ -28,6 +28,7 @@ import UsageCard from "@/components/dashboard/UsageCard";
 import ProgressCard from "@/components/dashboard/ProgressCard";
 import MonitoringWidget from "@/components/dashboard/MonitoringWidget";
 import RecentAlertsWidget from "@/components/dashboard/RecentAlertsWidget";
+import FixProgressWidget from "@/components/fix/FixProgressWidget";
 
 interface DashboardData {
   totalAudits: number;
@@ -206,7 +207,7 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+      <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -220,6 +221,13 @@ export default function DashboardPage() {
           transition={{ duration: 0.4, delay: 0.4 }}
         >
           <MonitoringWidget />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.42 }}
+        >
+          <FixProgressWidget />
         </motion.div>
       </div>
 

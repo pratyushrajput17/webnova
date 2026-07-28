@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AuditReportPDF from "@/components/pdf/AuditReportPDF";
+import PDFPreview from "@/components/pdf/PDFPreview";
 import { downloadPDF, sanitizeFilename } from "@/lib/pdf";
 import AuditDetailSections from "@/components/dashboard/AuditDetailSections";
+import FixAssistant from "@/components/fix/FixAssistant";
 import {
   ArrowLeft,
   Trash2,
@@ -28,6 +30,7 @@ import {
   Zap,
   FileDown,
   Download,
+  Wrench,
 } from "lucide-react";
 
 interface LinkItem {
@@ -292,6 +295,10 @@ export default function AuditDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [branding, setBranding] = useState<Record<string, string> | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showFixes, setShowFixes] = useState(false);
+  const [fixKey, setFixKey] = useState(0);
 
   useEffect(() => {
     const fetchAudit = async () => {
@@ -309,6 +316,10 @@ export default function AuditDetailPage() {
       }
     };
     fetchAudit();
+    axios
+      .get("/api/user/branding")
+      .then((res) => setBranding(res.data))
+      .catch(() => {});
   }, [params.id, router]);
 
   const handleDelete = async () => {
@@ -327,28 +338,21 @@ export default function AuditDetailPage() {
     setPdfLoading(true);
     try {
       const siteName = sanitizeFilename(audit.websiteUrl);
+      const isWhiteLabel =
+        branding &&
+        (branding.companyName || branding.logoUrl || branding.preparedBy);
       await downloadPDF(
         <AuditReportPDF
-          websiteUrl={audit.websiteUrl}
-          pageTitle={audit.pageTitle}
-          metaDescription={audit.metaDescription}
-          seoScore={audit.seoScore}
-          performanceScore={audit.performanceScore}
-          accessibilityScore={audit.accessibilityScore}
-          h1Count={audit.h1Count}
-          imageCount={audit.imageCount}
-          missingAltCount={audit.missingAltCount}
-          internalLinks={audit.internalLinks}
-          externalLinks={audit.externalLinks}
-          aiRecommendations={audit.aiRecommendations}
-          createdAt={audit.createdAt}
+          audit={audit}
+          branding={branding}
+          whiteLabel={!!isWhiteLabel}
         />,
         `audit-report-${siteName}.pdf`
       );
     } finally {
       setPdfLoading(false);
     }
-  }, [audit]);
+  }, [audit, branding]);
 
   const handleDownloadJSON = useCallback(() => {
     if (!audit) return;
@@ -460,6 +464,13 @@ export default function AuditDetailPage() {
               <FileDown className="h-4 w-4" />
             )}
             Download PDF
+          </button>
+          <button
+            onClick={() => setShowPreview(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+          >
+            <Eye className="h-4 w-4" />
+            View Report
           </button>
           <button
             onClick={handleDelete}
@@ -578,6 +589,33 @@ export default function AuditDetailPage() {
         }}
       />
 
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500">
+            <Wrench className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-zinc-800">
+              Fix Suggestions
+            </h2>
+            <p className="text-sm text-zinc-500">
+              Get actionable steps to fix SEO issues found in this audit.
+            </p>
+          </div>
+          <button
+            onClick={() => { setShowFixes(true); setFixKey((k) => k + 1); }}
+            className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+          >
+            <Wrench className="h-4 w-4" />
+            View Fix Suggestions
+          </button>
+        </div>
+      </motion.div>
+
       {recommendations.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -633,6 +671,28 @@ export default function AuditDetailPage() {
           Back to History
         </button>
       </div>
+
+      {audit && showPreview && (
+        <PDFPreview
+          audit={audit}
+          branding={branding}
+          whiteLabel={
+            !!(branding && (branding.companyName || branding.logoUrl || branding.preparedBy))
+          }
+          filename={`audit-report-${sanitizeFilename(audit.websiteUrl)}.pdf`}
+          open={showPreview}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+
+      {audit && (
+        <FixAssistant
+          key={fixKey}
+          auditId={audit.id}
+          open={showFixes}
+          onClose={() => setShowFixes(false)}
+        />
+      )}
     </motion.div>
   );
 }

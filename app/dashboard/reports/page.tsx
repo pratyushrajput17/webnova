@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
-import AuditReportPDF from "@/components/pdf/AuditReportPDF";
-import { downloadPDF, sanitizeFilename } from "@/lib/pdf";
+import { sanitizeFilename } from "@/lib/pdf";
+import PDFPreview from "@/components/pdf/PDFPreview";
 import {
   FileText,
   Download,
@@ -16,7 +16,18 @@ import {
   Zap,
   Eye,
   Search,
+  Crown,
+  Settings,
 } from "lucide-react";
+import Link from "next/link";
+
+interface Branding {
+  companyName?: string | null;
+  logoUrl?: string | null;
+  preparedBy?: string | null;
+  websiteUrl?: string | null;
+  supportEmail?: string | null;
+}
 
 interface AuditItem {
   id: string;
@@ -32,10 +43,21 @@ interface AuditItem {
 
 interface AuditFull extends AuditItem {
   h1Count: number;
+  h1Tags?: string[];
+  h2Tags?: string[];
+  h3Tags?: string[];
+  canonicalUrl?: string;
   imageCount: number;
   missingAltCount: number;
+  imagesData?: { src: string; alt: string; hasAlt: boolean }[];
+  missingAltImages?: { src: string }[];
   internalLinks: number;
+  internalLinksData?: { href: string; text: string }[];
   externalLinks: number;
+  externalLinksData?: { href: string; text: string }[];
+  titleLength?: number;
+  metaDescriptionLength?: number;
+  userPlan?: string;
 }
 
 const containerVariants = {
@@ -95,9 +117,11 @@ function ScoreBadge({
 export default function ReportsPage() {
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [branding, setBranding] = useState<Branding | null>(null);
+  const [previewAudit, setPreviewAudit] = useState<AuditFull | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -111,42 +135,35 @@ export default function ReportsPage() {
       }
     };
     fetchReports();
+
+    axios
+      .get("/api/user/branding")
+      .then((res) => setBranding(res.data))
+      .catch(() => {});
   }, []);
 
-  const handleDownloadPDF = useCallback(
+  const handlePreviewPDF = useCallback(
     async (audit: AuditItem) => {
-      setDownloadingId(audit.id);
-      setDownloadError(null);
+      setPreviewLoading(audit.id);
+      setPreviewError(null);
       try {
         const res = await axios.get(`/api/audit/${audit.id}`);
         const full: AuditFull = res.data;
-        const siteName = sanitizeFilename(full.websiteUrl);
-        await downloadPDF(
-          <AuditReportPDF
-            websiteUrl={full.websiteUrl}
-            pageTitle={full.pageTitle}
-            metaDescription={full.metaDescription}
-            seoScore={full.seoScore}
-            performanceScore={full.performanceScore}
-            accessibilityScore={full.accessibilityScore}
-            h1Count={full.h1Count}
-            imageCount={full.imageCount}
-            missingAltCount={full.missingAltCount}
-            internalLinks={full.internalLinks}
-            externalLinks={full.externalLinks}
-            aiRecommendations={full.aiRecommendations}
-            createdAt={full.createdAt}
-          />,
-          `audit-report-${siteName}.pdf`
-        );
+        setPreviewAudit(full);
       } catch {
-        setDownloadError(`Failed to generate report for ${audit.websiteUrl}.`);
+        setPreviewError(
+          `Failed to load report data for ${audit.websiteUrl}.`
+        );
       } finally {
-        setDownloadingId(null);
+        setPreviewLoading(null);
       }
     },
     []
   );
+
+  const isWhiteLabel =
+    branding &&
+    (branding.companyName || branding.logoUrl || branding.preparedBy);
 
   if (loading) {
     return (
@@ -237,14 +254,28 @@ export default function ReportsPage() {
         Download detailed audit reports for your websites.
       </p>
 
-      {downloadError && (
+      {isWhiteLabel && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm text-indigo-700">
+          <Crown className="h-4 w-4" />
+          White-label mode active — reports will use your branding.
+          <Link
+            href="/dashboard/settings"
+            className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+          >
+            <Settings className="h-3 w-3" />
+            Branding Settings
+          </Link>
+        </div>
+      )}
+
+      {previewError && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          {downloadError}
+          {previewError}
         </motion.div>
       )}
 
@@ -290,22 +321,64 @@ export default function ReportsPage() {
             </div>
 
             <button
-              onClick={() => handleDownloadPDF(audit)}
-              disabled={downloadingId === audit.id}
+              onClick={() => handlePreviewPDF(audit)}
+              disabled={previewLoading === audit.id}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {downloadingId === audit.id ? (
+              {previewLoading === audit.id ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
               )}
-              {downloadingId === audit.id
-                ? "Generating..."
-                : "Download PDF"}
+              {previewLoading === audit.id
+                ? "Loading..."
+                : "View Report"}
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  setPreviewLoading(audit.id);
+                  const res = await axios.get(`/api/audit/${audit.id}`);
+                  const full: AuditFull = res.data;
+                  const { downloadPDF } = await import("@/lib/pdf");
+                  const AuditReportPDF = (
+                    await import("@/components/pdf/AuditReportPDF")
+                  ).default;
+                  await downloadPDF(
+                    <AuditReportPDF
+                      audit={full}
+                      branding={branding}
+                      whiteLabel={!!isWhiteLabel}
+                    />,
+                    `audit-report-${sanitizeFilename(full.websiteUrl)}.pdf`
+                  );
+                } catch {
+                  setPreviewError("Failed to generate PDF.");
+                } finally {
+                  setPreviewLoading(null);
+                }
+              }}
+              disabled={previewLoading === audit.id}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
             </button>
           </motion.div>
         ))}
       </motion.div>
+
+      {previewAudit && (
+        <PDFPreview
+          audit={previewAudit}
+          branding={branding}
+          whiteLabel={!!isWhiteLabel}
+          filename={`audit-report-${sanitizeFilename(previewAudit.websiteUrl)}.pdf`}
+          open={!!previewAudit}
+          onClose={() => setPreviewAudit(null)}
+        />
+      )}
     </motion.div>
   );
 }
