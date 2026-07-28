@@ -18,7 +18,10 @@ import {
   BarChart3,
   Users,
   Loader2,
+  AlertTriangle,
+  TrendingDown,
 } from "lucide-react";
+import Link from "next/link";
 import axios from "axios";
 import StatsCard from "@/components/dashboard/StatsCard";
 import ActivityCard from "@/components/dashboard/ActivityCard";
@@ -48,6 +51,15 @@ interface DashboardData {
   upcomingTasks: { text: string; completed: boolean }[];
 }
 
+interface WebsiteSummary {
+  domain: string;
+  latestScore: number;
+  scoreChange: number | null;
+  health: string;
+  latestAuditId: string;
+  lastAuditedAt: string;
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -59,12 +71,17 @@ const containerVariants = {
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [websites, setWebsites] = useState<WebsiteSummary[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await axios.get("/api/dashboard");
-        setData(res.data);
+        const [dashRes, sitesRes] = await Promise.all([
+          axios.get("/api/dashboard"),
+          axios.get("/api/websites").catch(() => ({ data: { websites: [] } })),
+        ]);
+        setData(dashRes.data);
+        setWebsites(sitesRes.data.websites || []);
       } catch {
         // silently fail
       } finally {
@@ -72,6 +89,10 @@ export default function DashboardPage() {
       }
     })();
   }, []);
+
+  const criticalSites = websites.filter((w) => w.health === "critical").sort((a, b) => a.latestScore - b.latestScore);
+  const needsAttentionSites = websites.filter((w) => w.health === "needs_attention");
+  const healthyCount = websites.filter((w) => w.health === "healthy").length;
 
   if (loading) {
     return (
@@ -140,6 +161,70 @@ export default function DashboardPage() {
           />
         ))}
       </motion.div>
+
+      {websites.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mt-8"
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Link href="/dashboard/websites" className="rounded-xl border border-zinc-100 bg-white p-4 transition-colors hover:bg-zinc-50">
+              <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Websites</p>
+              <p className="mt-1 text-2xl font-bold text-zinc-900">{websites.length}</p>
+            </Link>
+            <div className="rounded-xl border border-zinc-100 bg-white p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Healthy</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-600">{healthyCount}</p>
+            </div>
+            <div className="rounded-xl border border-zinc-100 bg-white p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-amber-600">Needs Attention</p>
+              <p className="mt-1 text-2xl font-bold text-amber-600">{needsAttentionSites.length}</p>
+            </div>
+            <Link href="/dashboard/websites?filter=critical" className="rounded-xl border border-red-100 bg-white p-4 transition-colors hover:bg-red-50">
+              <p className="text-xs font-medium uppercase tracking-wider text-red-600">Critical</p>
+              <p className="mt-1 text-2xl font-bold text-red-600">{criticalSites.length}</p>
+            </Link>
+          </div>
+          {criticalSites.length > 0 && (
+            <div className="mt-4 rounded-xl border border-red-100 bg-red-50/50 p-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-red-800">
+                <AlertTriangle className="h-4 w-4" />
+                Websites Requiring Immediate Attention
+              </h3>
+              <div className="mt-3 space-y-2">
+                {criticalSites.slice(0, 5).map((site) => (
+                  <Link
+                    key={site.domain}
+                    href={`/dashboard/sites/${encodeURIComponent(site.domain)}`}
+                    className="flex items-center justify-between rounded-lg bg-white px-4 py-2.5 transition-colors hover:bg-zinc-50"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <TrendingDown className="h-4 w-4 shrink-0 text-red-500" />
+                      <span className="truncate text-sm font-medium text-zinc-800">{site.domain}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold text-red-600">{site.latestScore}</span>
+                      {site.scoreChange !== null && site.scoreChange < 0 && (
+                        <span className="text-xs text-red-500">{site.scoreChange}</span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              {criticalSites.length > 5 && (
+                <Link
+                  href="/dashboard/websites?filter=critical"
+                  className="mt-2 inline-flex text-xs font-medium text-red-600 hover:text-red-800"
+                >
+                  View all {criticalSites.length} critical websites
+                </Link>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-5">
         <motion.div

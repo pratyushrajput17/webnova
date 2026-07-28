@@ -16,10 +16,12 @@ import {
   X,
   Bell,
   Sparkles,
+  Monitor,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/websites", label: "My Websites", icon: Monitor },
   { href: "/dashboard/audits", label: "Website Audits", icon: Globe },
   { href: "/dashboard/history", label: "Audit History", icon: Clock },
   { href: "/dashboard/monitoring", label: "Monitoring", icon: Radar },
