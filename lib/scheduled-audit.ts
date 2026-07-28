@@ -7,6 +7,7 @@ import {
 } from "@/lib/quota";
 import { logUsage } from "@/lib/usage";
 import { createNotification } from "@/lib/notifications";
+import { processAlertForAudit } from "@/lib/seo-alert";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
 export type ScheduleFrequency = "weekly" | "monthly";
@@ -212,6 +213,14 @@ export async function executeScheduledAudit(scheduleId: string): Promise<{
   ).catch((err) => {
     console.error(
       `[SCHEDULED_AUDIT] Notification failed for userId=${user.id}:`,
+      err
+    );
+  });
+
+  // Fire-and-forget: change detection & email alerts
+  processAlertForAudit(user.id, audit.id, targetUrl).catch((err) => {
+    console.error(
+      `[SCHEDULED_AUDIT] Alert processing failed for userId=${user.id}:`,
       err
     );
   });

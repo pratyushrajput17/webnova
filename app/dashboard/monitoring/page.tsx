@@ -18,6 +18,10 @@ import {
   CheckCircle2,
   Calendar,
   ArrowRight,
+  Bell,
+  BellOff,
+  Settings2,
+  X,
 } from "lucide-react";
 
 interface Schedule {
@@ -104,6 +108,14 @@ export default function MonitoringPage() {
   const [addError, setAddError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [alertSettingsSite, setAlertSettingsSite] = useState<string | null>(null);
+  const [alertPrefs, setAlertPrefs] = useState<Record<string, {
+    emailAlerts: boolean;
+    improvementAlerts: boolean;
+    notificationEmail: string;
+    thresholds: Record<string, number>;
+  }>>({});
+  const [savingAlertPrefs, setSavingAlertPrefs] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +193,50 @@ export default function MonitoringPage() {
       // silently fail
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const fetchAlertPrefs = async () => {
+    try {
+      const res = await axios.get("/api/alert-preferences");
+      const prefsMap: Record<string, typeof alertPrefs[string]> = {};
+      for (const p of res.data.preferences ?? []) {
+        prefsMap[p.websiteUrl] = {
+          emailAlerts: p.emailAlerts,
+          improvementAlerts: p.improvementAlerts,
+          notificationEmail: p.notificationEmail ?? "",
+          thresholds: p.thresholds ?? {},
+        };
+      }
+      setAlertPrefs(prefsMap);
+    } catch {
+      // silently fail
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAlertPrefs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const handleSaveAlertPrefs = async (websiteUrl: string) => {
+    const prefs = alertPrefs[websiteUrl];
+    if (!prefs) return;
+    setSavingAlertPrefs(true);
+    try {
+      await axios.put("/api/alert-preferences", {
+        websiteUrl,
+        emailAlerts: prefs.emailAlerts,
+        improvementAlerts: prefs.improvementAlerts,
+        notificationEmail: prefs.notificationEmail || null,
+        thresholds: prefs.thresholds,
+      });
+      setAlertSettingsSite(null);
+    } catch {
+      // silently fail
+    } finally {
+      setSavingAlertPrefs(false);
     }
   };
 
@@ -432,6 +488,17 @@ export default function MonitoringPage() {
                           )}
                         </button>
                         <button
+                          onClick={() => setAlertSettingsSite(s.websiteUrl)}
+                          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-violet-50 hover:text-violet-600"
+                          title="Alert Settings"
+                        >
+                          {alertPrefs[s.websiteUrl]?.emailAlerts === false ? (
+                            <BellOff className="h-4 w-4" />
+                          ) : (
+                            <Bell className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
                           onClick={() => handleDelete(s.id)}
                           disabled={actionLoading === s.id}
                           className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
@@ -448,6 +515,156 @@ export default function MonitoringPage() {
           </div>
         )}
       </div>
+      {alertSettingsSite && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-8 shadow-xl"
+          >
+            <button
+              onClick={() => setAlertSettingsSite(null)}
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50">
+              <Settings2 className="h-6 w-6 text-violet-500" />
+            </div>
+
+            <h3 className="text-center text-xl font-bold text-zinc-800">
+              Alert Settings
+            </h3>
+            <p className="mt-1 text-center text-sm text-zinc-500">
+              {alertSettingsSite.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}
+            </p>
+
+            <div className="mt-6 space-y-5">
+              <label className="flex items-center justify-between rounded-xl border border-zinc-200 p-4">
+                <div>
+                  <p className="text-sm font-medium text-zinc-800">
+                    Email Alerts
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Receive email notifications for critical and warning changes
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setAlertPrefs((prev) => ({
+                      ...prev,
+                      [alertSettingsSite]: {
+                        ...prev[alertSettingsSite],
+                        emailAlerts: !prev[alertSettingsSite]?.emailAlerts,
+                      },
+                    }))
+                  }
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    alertPrefs[alertSettingsSite]?.emailAlerts
+                      ? "bg-black"
+                      : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                      alertPrefs[alertSettingsSite]?.emailAlerts
+                        ? "translate-x-5"
+                        : ""
+                    }`}
+                  />
+                </button>
+              </label>
+
+              <label className="flex items-center justify-between rounded-xl border border-zinc-200 p-4">
+                <div>
+                  <p className="text-sm font-medium text-zinc-800">
+                    Improvement Alerts
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Also receive emails when SEO improvements are detected
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setAlertPrefs((prev) => ({
+                      ...prev,
+                      [alertSettingsSite]: {
+                        ...prev[alertSettingsSite],
+                        improvementAlerts: !prev[alertSettingsSite]?.improvementAlerts,
+                      },
+                    }))
+                  }
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    alertPrefs[alertSettingsSite]?.improvementAlerts
+                      ? "bg-black"
+                      : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                      alertPrefs[alertSettingsSite]?.improvementAlerts
+                        ? "translate-x-5"
+                        : ""
+                    }`}
+                  />
+                </button>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Notification Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="default: your account email"
+                  value={alertPrefs[alertSettingsSite]?.notificationEmail ?? ""}
+                  onChange={(e) =>
+                    setAlertPrefs((prev) => ({
+                      ...prev,
+                      [alertSettingsSite]: {
+                        ...prev[alertSettingsSite],
+                        notificationEmail: e.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-zinc-300"
+                />
+                <p className="mt-1 text-xs text-zinc-400">
+                  Leave empty to use your account email
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setAlertSettingsSite(null)}
+                className="rounded-xl border border-zinc-200 px-6 py-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveAlertPrefs(alertSettingsSite)}
+                disabled={savingAlertPrefs}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+              >
+                {savingAlertPrefs ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                Save
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
     </motion.div>
   );
 }

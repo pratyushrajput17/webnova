@@ -29,6 +29,9 @@ model User {
   notifications       Notification[]
   competitorComparisons CompetitorComparison[]
   scheduledAudits      ScheduledAudit[]
+  reportBranding       ReportBranding?
+  alertPreferences     AlertPreference[]
+  seoAlerts            SEOAlert[]
 }
 
 model UsageHistory {
@@ -179,4 +182,60 @@ model ScheduledAudit {
   @@index([userId])
   @@index([status, nextRunAt])
   @@index([userId, websiteUrl])
+}
+
+model ReportBranding {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  companyName   String?
+  logoUrl       String?
+  preparedBy    String?
+  websiteUrl    String?
+  supportEmail  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AlertPreference {
+  id                String   @id @default(cuid())
+  userId            String
+  websiteUrl        String
+  emailAlerts       Boolean  @default(true)
+  improvementAlerts Boolean  @default(false)
+  notificationEmail String?
+  thresholds        Json     @default("{}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, websiteUrl])
+  @@index([userId])
+}
+
+model SEOAlert {
+  id              String    @id @default(cuid())
+  userId          String
+  websiteUrl      String
+  previousAuditId String?
+  currentAuditId  String
+  severity        String    @default("WARNING")
+  changeType      String
+  summary         String
+  metadata        Json      @default("{}")
+  emailStatus     String    @default("PENDING")
+  emailSentAt     DateTime?
+  deliveryId      String?
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([previousAuditId, currentAuditId, changeType])
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, websiteUrl, createdAt])
+  @@index([emailStatus])
 }

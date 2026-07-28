@@ -27,6 +27,7 @@ import RecentAuditsWidget from "@/components/dashboard/RecentAuditsWidget";
 import UsageCard from "@/components/dashboard/UsageCard";
 import ProgressCard from "@/components/dashboard/ProgressCard";
 import MonitoringWidget from "@/components/dashboard/MonitoringWidget";
+import RecentAlertsWidget from "@/components/dashboard/RecentAlertsWidget";
 
 interface DashboardData {
   totalAudits: number;
@@ -221,6 +222,15 @@ export default function DashboardPage() {
           <MonitoringWidget />
         </motion.div>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.45 }}
+        className="mt-8"
+      >
+        <RecentAlertsWidget />
+      </motion.div>
 
       <motion.div
         variants={containerVariants}
