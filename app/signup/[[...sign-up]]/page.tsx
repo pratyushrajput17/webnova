@@ -19,6 +19,7 @@ export default function SignUpPage() {
             footerActionLink: "text-black font-medium hover:underline",
             dividerLine: "bg-zinc-200",
             dividerText: "text-zinc-500 text-sm",
+            developmentBadge: "hidden",
           },
         }}
       />

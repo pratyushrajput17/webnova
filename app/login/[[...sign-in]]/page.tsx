@@ -26,6 +26,7 @@ export default async function SignInPage(props: {
             dividerText: "text-zinc-500 text-sm",
             identityPreviewEditButton: "text-black",
             formFieldAction: "text-zinc-500 hover:text-black",
+            developmentBadge: "hidden",
           },
         }}
       />
